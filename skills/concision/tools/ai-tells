@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+"""ai-tells — run the avoid-ai-writing detector over a file and report tells.
+
+Wraps Conor Bronsdon's avoid-ai-writing detector (MIT license) so it can be
+called from a shell, on a path, the same way any other lint tool is.
+
+    ai-tells DRAFT.md
+    ai-tells DRAFT.md --json
+    ai-tells DRAFT.md --hard        # exit 1 if any Tier-1A / em dash / emoji found
+
+Why this exists
+----------------
+The research says surface markers like em-dash frequency or certain
+vocabulary do not reliably identify machine-written text, and detectors
+based on them misfire often. None of that changes the practical problem:
+readers respond to these markers whether or not a detector would agree
+with them. This tool optimizes for how a human reader will receive the
+writing, not for what a detector would conclude.
+
+Configure the detector clone's path with AI_TELLS_DETECTOR_PATH; defaults
+to ~/workspaces/avoid-ai-writing. See skills/concision/SKILL.md in this
+repo for the clone command.
+"""
+
+import argparse
+import json
+import re
+import os
+import subprocess
+import sys
+
+DETECTOR = os.environ.get(
+    "AI_TELLS_DETECTOR_PATH", os.path.expanduser("~/workspaces/avoid-ai-writing")
+)
+
+# The three hard bans plus two more the upstream detector's own categories
+# match closely enough to enforce the same way.
+HARD_TYPES = {"tier1", "em-dash", "emoji", "lets-construction", "template-phrase"}
+
+
+def strip_code(text):
+    """Remove fenced blocks and inline code before analysis.
+
+    Code is exempt from the ban list ("don't edit quoted material, code
+    blocks, tables"). Without this, a document that names a banned word in
+    backticks — e.g. explaining what the ban list contains — gets flagged
+    for naming it.
+    """
+    text = re.sub(r"```.*?```", "", text, flags=re.S)
+    text = re.sub(r"`[^`\n]*`", "", text)
+    return text
+
+
+def run_detector(path):
+    js = r"""
+const {analyzeText} = require(process.argv[1] + '/detector/patterns.js');
+const fs = require('fs');
+const txt = fs.readFileSync(process.argv[2], 'utf8');
+const r = analyzeText(txt);
+process.stdout.write(JSON.stringify({
+  score: r.score, label: r.label,
+  classification: r.document_classification,
+  confidence: r.confidence_category,
+  stats: r.stats,
+  issues: (r.issues || []).map(i => ({
+    type: i.type, text: i.text || i.match || '', line: i.line, context: i.context
+  }))
+}));
+"""
+    import tempfile
+    stripped = strip_code(open(path, encoding="utf-8").read())
+    tf = tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8")
+    tf.write(stripped)
+    tf.close()
+    try:
+        out = subprocess.run(
+            ["node", "-e", js, DETECTOR, tf.name],
+            capture_output=True, timeout=60,
+        )
+    except FileNotFoundError:
+        sys.exit("node not found; the detector is JavaScript")
+    except subprocess.TimeoutExpired:
+        sys.exit("detector timed out")
+    finally_path = tf.name
+    if out.returncode != 0:
+        os.unlink(finally_path)
+        sys.exit(
+            "detector failed (checked %s — set AI_TELLS_DETECTOR_PATH if it "
+            "lives elsewhere): %s" % (DETECTOR, out.stderr.decode()[:400])
+        )
+    os.unlink(finally_path)
+    return json.loads(out.stdout.decode())
+
+
+def scan_bans(path):
+    """The three explicit hard bans, checked directly rather than inferred.
+
+    Three exemptions, each needed once this flagged itself wrongly:
+      - fenced code and inline code: `--json` is a CLI flag, not an em dash
+      - CLI long-options anywhere: --hard, --iterate
+      - arrows and typographic marks: U+2192 is not an emoji
+    """
+    text = open(path, encoding="utf-8").read()
+    hits = []
+    in_fence = False
+
+    def is_emoji(ch):
+        o = ord(ch)
+        return (
+            0x1F300 <= o <= 0x1FAFF    # pictographs, emoticons, symbols
+            or 0x1F000 <= o <= 0x1F2FF # mahjong, cards, enclosed
+            or 0x2600 <= o <= 0x27BF   # misc symbols + dingbats
+            or o == 0xFE0F             # variation selector
+            or 0x2B00 <= o <= 0x2BFF   # misc symbols and arrows (stars etc)
+        )
+
+    for n, line in enumerate(text.splitlines(), 1):
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+
+        stripped = re.sub(r"`[^`]*`", "", line)          # drop inline code
+        stripped = re.sub(r"(?<!\S)--\w[\w-]*", "", stripped)  # drop CLI long-opts
+
+        if "—" in stripped or "--" in stripped:
+            # a list item opening `- **Term** — gloss` is typography, not prose
+            ls = stripped.lstrip()
+            if not (ls.startswith(("-", "*", "|")) or re.match(r"^\d+\.\s", ls)):
+                hits.append(("em-dash", n, line.strip()[:90]))
+
+        for ch in stripped:
+            if is_emoji(ch):
+                hits.append(("emoji", n, line.strip()[:90]))
+                break
+    return hits
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("path")
+    ap.add_argument("--json", action="store_true")
+    ap.add_argument("--hard", action="store_true",
+                    help="exit 1 if any hard-banned pattern is present")
+    a = ap.parse_args()
+
+    if not os.path.exists(a.path):
+        sys.exit("no such file: " + a.path)
+
+    r = run_detector(a.path)
+    bans = scan_bans(a.path)
+
+    if a.json:
+        r["explicit_bans"] = [{"type": t, "line": n, "text": s} for t, n, s in bans]
+        print(json.dumps(r, indent=2))
+        return
+
+    print()
+    print(" %s" % os.path.basename(a.path))
+    print(" classification : %s (%s confidence)"
+          % (r.get("classification", "?"), r.get("confidence", "?")))
+    print(" score          : %s   %s" % (r.get("score", "?"), r.get("label", "")))
+    print()
+
+    by_type = {}
+    for i in r.get("issues", []):
+        by_type.setdefault(i["type"], []).append(i["text"])
+
+    if not by_type and not bans:
+        print(" no tells found")
+        return
+
+    for t in sorted(by_type, key=lambda k: -len(by_type[k])):
+        words = by_type[t]
+        mark = "HARD" if t in HARD_TYPES else "    "
+        uniq = sorted(set(w for w in words if w))
+        print(" %s %-26s %2d   %s" % (mark, t, len(words), ", ".join(uniq[:8])))
+
+    if bans:
+        print()
+        print(" EXPLICIT BANS (em dash, emoji)")
+        for t, n, s in bans[:20]:
+            print("      %-8s line %-4d %s" % (t, n, s))
+
+    hard = sum(len(v) for k, v in by_type.items() if k in HARD_TYPES) + len(bans)
+    print()
+    print(" %d hard, %d advisory"
+          % (hard, sum(len(v) for k, v in by_type.items() if k not in HARD_TYPES)))
+
+    if a.hard and hard:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
