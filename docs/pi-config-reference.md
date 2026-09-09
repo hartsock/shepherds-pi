@@ -42,8 +42,14 @@ Field notes:
   supported `api` values if the backend is different.
 - `contextWindow`/`maxTokens` are declarative — `pi` trusts them for
   budgeting and UI display but the backend enforces the real limit.
-  Verify against the backend's own `/v1/models` listing rather than
-  guessing.
+  **`maxTokens` is reserved out of `contextWindow`**, so a large output
+  reservation against a small real window starves the prompt.
+  Verify rather than guessing — and note that a llama.cpp backend's
+  `/v1/models` `context_length` can disagree with what it actually serves.
+  `curl "$BASE/props?model=<id>" | jq .default_generation_settings.n_ctx`
+  is the serving process's own answer; when the two disagree, it wins.
+  (`n_ctx: 0` with `model_path: "none"` means nothing is loaded — unknown,
+  not zero.)
 - `cost` fields are for `pi`'s own cost-tracking display; set to `0` for
   free/internal endpoints, or real per-token pricing otherwise.
 

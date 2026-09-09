@@ -42,10 +42,40 @@ Edit `~/.pi/agent/models.json` (create it if absent):
 }
 ```
 
-Pick real values for `contextWindow`/`maxTokens` from the backend's own
-model listing (see step 3) rather than guessing — an overstated
-`contextWindow` just means `pi` will let you overflow the real limit before
-the backend errors.
+Pick real values for `contextWindow`/`maxTokens` rather than guessing — but
+**`/v1/models` is not always a reliable source for the window**, and the two
+fields interact in a way that bites hard.
+
+**`maxTokens` is reserved OUT OF `contextWindow`.** Whatever you set aside for
+output is not available for the prompt. The example above (`128000` / `16384`)
+is a healthy ratio; `65536` / `64000` leaves about **1,500 tokens for the entire
+prompt**, and every request fails immediately.
+
+**An overstated `contextWindow` is worse than "you overflow and the backend
+errors."** `pi`'s usage meter is denominated in the number you declare, so a
+window three times too large means the meter reads a comfortable `7%` while the
+request is already impossible. The failure gives you no signal to follow.
+
+**Check the serving process, not just the catalogue.** For a llama.cpp backend
+(including one behind a router), `/v1/models` may advertise a `context_length`
+the server does not actually serve. Ask the server what it loaded:
+
+```bash
+# what the catalogue ADVERTISES
+curl -s "$BASE/v1/models" | jq '.data[] | select(.id=="<model>") | .context_length'
+
+# what the server is actually SERVING
+curl -s "$BASE/props?model=<model>" | jq '.default_generation_settings.n_ctx'
+```
+
+Measured on one such router, same model, same endpoint: the catalogue said
+`200000`, the server said `65536`. If those two disagree, **the server wins** —
+it is the one that rejects your request.
+
+Two notes on `/props`: a router with nothing loaded answers `n_ctx: 0` with
+`model_path: "none"`, which means *unknown*, not zero — pass `?model=<id>` to
+get a real answer. And backends that are not llama.cpp will not have `/props`
+at all, in which case the catalogue is the best you have.
 
 `apiKey: "$<YOUR_ENV_VAR_NAME>"` means "read this from the named
 environment variable at call time" — nothing goes in the file itself.
