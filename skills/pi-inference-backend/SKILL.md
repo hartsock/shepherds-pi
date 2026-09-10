@@ -77,6 +77,22 @@ Two notes on `/props`: a router with nothing loaded answers `n_ctx: 0` with
 get a real answer. And backends that are not llama.cpp will not have `/props`
 at all, in which case the catalogue is the best you have.
 
+**Better, when the catalogue carries the launch argv.** Some llama.cpp routers
+report each model's `status.args` — the flags `llama-server` was actually
+started with. `--ctx-size` there beats `/props`: it is the authoritative number,
+it costs no model load, and it answers for *every* model rather than only the
+loaded one.
+
+```bash
+curl -s "$BASE/v1/models" | jq -r '
+  .data[] | [.id, ((.status.args // []) | index("--ctx-size") as $i |
+  if $i then .[$i+1] else "UNKNOWN" end)] | @tsv'
+```
+
+Treat `UNKNOWN` as unknown — fall back to `/props`, or to a deliberately small
+default. Never silently substitute a large one; that is the failure this whole
+section exists to prevent.
+
 `apiKey: "$<YOUR_ENV_VAR_NAME>"` means "read this from the named
 environment variable at call time" — nothing goes in the file itself.
 Export it in your shell profile, e.g.:
@@ -88,6 +104,22 @@ export YOUR_ENV_VAR_NAME="$(cat ~/.secrets/your-backend/token)"
 (or however your secret store works — the point is: the token lives in one
 place, and the shell profile is the only thing that reads it into the
 process environment.)
+
+### Backends that need no auth still need an `apiKey`
+
+A LAN-only `llama-server` started without `--api-key` accepts anything. But pi
+**hides every model whose provider has no resolvable credential**, and the
+symptom is `pi --list-models` printing `No models available` — a message about
+auth that never names the provider it dropped. Give it a placeholder:
+
+```json
+"apiKey": "no-auth-required",
+```
+
+Use a **literal**, not `"$ENV_VAR"`, when anything non-interactive runs pi
+(agent panes, cron, CI): a shell profile that exports the var is not read by a
+non-interactive shell, and the model list silently empties again. It is a
+placeholder, not a secret — there is nothing to leak.
 
 ## 2. Verify auth resolves
 

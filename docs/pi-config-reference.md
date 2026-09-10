@@ -37,6 +37,13 @@ Field notes:
 
 - `apiKey: "$NAME"` means "read environment variable `NAME` at call
   time" — never put a literal secret in this file.
+- **`apiKey` is required even by backends that need no auth.** pi hides every
+  model whose provider has no resolvable credential; the symptom is
+  `No models available` from `pi --list-models`, which blames auth without
+  naming the provider it dropped. A LAN endpoint started without an API key
+  takes any value — `"apiKey": "no-auth-required"`. Use a literal rather than
+  `"$VAR"` if anything non-interactive runs pi: a shell profile is not read by
+  a non-interactive shell, and the model list silently empties again.
 - `api: "openai-completions"` is the value for any backend that speaks
   the standard `/v1/chat/completions` shape. Check `pi --help` for other
   supported `api` values if the backend is different.
@@ -52,6 +59,14 @@ Field notes:
   not zero.)
 - `cost` fields are for `pi`'s own cost-tracking display; set to `0` for
   free/internal endpoints, or real per-token pricing otherwise.
+- `reasoning` does **not** control whether thinking is displayed — pi detects
+  `reasoning_content`/`reasoning`/`reasoning_text` on the response stream at
+  runtime, whatever this says. What it gates is the thinking toggle, the
+  thinking levels, and the output budget: with `reasoning: false` pi never
+  widens `maxTokens` for thinking, so a model that reasons anyway spends its
+  output budget on hidden tokens and can return **empty content with
+  `finish_reason: "length"`**. When a backend publishes no capability data,
+  `true` is the safer declaration — the opposite error is silent.
 
 ## `settings.json` — CLI-wide settings
 
