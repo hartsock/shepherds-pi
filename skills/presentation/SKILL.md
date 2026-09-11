@@ -1,7 +1,6 @@
 ---
 name: presentation
 description: Shepherd a pi helper building or revising generated user-facing surfaces. Brief one shared emitter, deterministic committed output, accessible navigation, and structural tests, then inspect those boundaries in the result.
-license: Apache-2.0
 ---
 
 # Shepherd presentation surfaces
@@ -40,6 +39,5 @@ navigation is present, and structural tests cover every page type. Consult the
 
 ---
 
-Adapted from Shawn Hartsock's [newt-agent](https://github.com/Gilamonster-Foundation/newt-agent/tree/main/.newt/bundled-skills/presentation) `bundled-skills/presentation`, Apache-2.0. Modified into shepherd instructions for briefing and inspecting pi helpers.
 
 Model: GPT-5 | Harness: Codex | Operator: Shawn Hartsock | Time: 13:08 EDT | Date: 2026-09-11

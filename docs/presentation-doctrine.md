@@ -3,8 +3,6 @@ Read the relevant section when preparing a helper brief; the skill defines
 how to supervise the work. Examples describe design choices, not permission
 to expand the assigned task.
 
-This reference retains the Apache-2.0 attribution below.
-
 # Presentation: one emitter, stable output, accessible structure
 
 Generated user-facing surfaces need one emitter, deterministic output, and
@@ -83,6 +81,5 @@ pixel-only evidence, and unpinned presentation dependencies.
 
 ---
 
-Adapted from Shawn Hartsock's [newt-agent](https://github.com/Gilamonster-Foundation/newt-agent/tree/main/.newt/bundled-skills/presentation) `bundled-skills/presentation`, Apache-2.0. Modified into shepherd guidance for generated user-facing surfaces.
 
 Model: GPT-5 | Harness: Codex | Operator: Shawn Hartsock | Time: 13:07 EDT | Date: 2026-09-11
