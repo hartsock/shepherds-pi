@@ -41,4 +41,4 @@ for the graph rule, data boundary, failure example, and acceptance matrix.
 
 ---
 
-Model: GPT-5.6 | Harness: Codex | Operator: Shawn Hartsock | Time: 13:04 EDT | Date: 2026-09-11
+Model: GPT-5 | Harness: Codex | Operator: Shawn Hartsock | Time: 13:04 EDT | Date: 2026-09-11
