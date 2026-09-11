@@ -4,12 +4,24 @@
   <img src="assets/logo.png" width="220" alt="Shepherd's Pi logo — a pi symbol shepherding three sheep inside a circular badge">
 </p>
 
+## Combine Herdr and Pi
+
+Like peanut butter and chocolate, herdr and pi are two great tastes that
+taste great together. Herdr gives you the multiplexed panes and the
+socket API to drive them; pi gives you a small, fast, model-agnostic agent
+to put in each pane. A herdr tab full of idle `pi` panes is a flock — ready
+for a shepherding agent to dispatch work into.
+
 A skills repo, in the style of [ponytail](https://github.com/DietrichGebert/ponytail):
 plain-text instructions for standing up a **[herdr](https://herdr.dev)**
 workspace, wiring **[pi](https://github.com/earendil-works/pi)** to an
 inference backend of your choice, and raising a flock of idle helper panes
 ready for another agent to shepherd. Bring your own backend, your own
 model, your own repo.
+
+![Codex shepherding two pi agents through parallel reviews in Herdr](assets/shepherd-demo.gif)
+
+*Codex dispatches two pi helpers and reads their progress. Recorded at 2.5× speed.*
 
 ## What is Herdr?
 
@@ -26,14 +38,6 @@ It is so minimal it is actually hard for a human to use. That minimalism
 reduces distractions for the LLM inside it and makes it subtly more
 effective: fewer built-in opinions, less ceremony, a smaller surface to
 get confused by.
-
-## Combine Herdr and Pi
-
-Like peanut butter and chocolate, herdr and pi are two great tastes that
-taste great together. Herdr gives you the multiplexed panes and the
-socket API to drive them; pi gives you a small, fast, model-agnostic agent
-to put in each pane. A herdr tab full of idle `pi` panes is a flock — ready
-for a shepherding agent to dispatch work into.
 
 ## In this repo
 
