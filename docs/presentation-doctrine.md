@@ -81,5 +81,4 @@ pixel-only evidence, and unpinned presentation dependencies.
 
 ---
 
-
 Model: GPT-5 | Harness: Codex | Operator: Shawn Hartsock | Time: 13:07 EDT | Date: 2026-09-11
