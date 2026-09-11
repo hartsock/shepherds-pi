@@ -16,10 +16,11 @@ says, done.
 5. `skills/tmux-drive` — when a program needs a real TTY and neither `pi`
    nor herdr apply (an installer, a REPL, any TUI).
 
-The skills `concision`, `tdd-red-green-blue`, `three-cs`, and
-`unix-philosophy` guide the shepherd in briefing, inspecting, and steering
-pi helpers. They are not setup steps or blanket instructions for workers
-to delegate again. Read `docs/shepherding.md` for the coordination loop.
+The skills `concision`, `cross-project-linking`, `presentation`,
+`tdd-red-green-blue`, `three-cs`, and `unix-philosophy` guide the shepherd
+in briefing, inspecting, and steering pi helpers. They are not setup steps
+or blanket instructions for workers to delegate again. Read
+`docs/shepherding.md` for the coordination loop.
 `functional-cohesion` remains supporting design doctrine.
 
 ## Conventions this repo follows
