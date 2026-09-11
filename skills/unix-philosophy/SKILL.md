@@ -1,123 +1,65 @@
 ---
 name: unix-philosophy
-description: Write small, composable, text-based tools that do one thing well and connect through simple interfaces — the design taste behind pipes, filters, and everything in this repo's own tooling.
-when_to_use: When designing a new script, CLI, or skill's bundled tool; when a tool is growing flags for unrelated concerns; when deciding whether two behaviors belong in one program or two; when a tool's output format is making it hard to compose with anything else.
+description: Shepherd a pi helper building or reviewing a small CLI, script, or composable interface. Specify one job and an input/output contract, inspect actual composition and failure behavior, and steer away from unrelated modes or noisy output.
 ---
 
-# The Unix Philosophy
+# Shepherd small, composable tools
 
-Doug McIlroy's summary, still the whole doctrine:
+You define the tool's job and integration contract; pi implements within
+that boundary. Inspect whether another caller can consume the output and
+detect failures without knowing the internals. For review-only work, ask
+for findings instead of edits. Do not split a tool merely because it has
+several flags or a long help page.
 
-> Write programs that do one thing and do it well. Write programs to work
-> together. Write programs to handle text streams, because that is a
-> universal interface.
+For helper selection, transport, and blocked-state handling, follow the
+[shared shepherd loop](../../docs/shepherding.md).
 
-## The core rules
+## Brief the interface before the implementation
 
-- **Do one thing well.** A program that tries to do everything does
-  nothing well, and every feature it adds is a feature every caller has
-  to learn to ignore. If a tool's `--help` needs sections, it has
-  probably outgrown "one thing."
-- **Expect the output of every program to become the input to another,
-  as yet unknown, program.** Don't clutter output with anything that
-  isn't the data. No banners, no progress bars on stdout, no "Done!" —
-  those go to stderr, or nowhere.
-- **Design and build software, even operating systems, to be tried
-  early**, ideally within weeks. Don't hesitate to throw away the
-  clumsy parts and rebuild. A tool nobody has run yet is still a guess.
-- **Use tools in preference to unskilled help to lighten a programming
-  task**, even if a detour is needed to build the tools, and expect to
-  throw some of them out after you've finished using them. Writing a
-  small script to do the boring part is not overhead — it's the job.
+Specify the one job, owned files, expected input, output format, diagnostics,
+exit behavior, and an actual downstream consumer. Prefer an existing format
+and command over a new parser or service. If the target is a library, define
+the narrow API and its caller rather than forcing a shell interface.
 
-## Text streams — and their analogs — as the universal interface
+> Build the assigned tool for this one job and supplied input/output
+> contract. Reuse existing components where practical. Keep result data
+> on stdout, diagnostics on stderr, and meaningful failure exit statuses.
+> Demonstrate it with the supplied downstream consumer and representative
+> success, empty-input, and failure cases. Report commands, outputs, exit
+> statuses, and changed files. No unrelated modes, services, or delegation.
 
-Prefer plain text over a bespoke binary or proprietary format whenever
-the data will ever be read, diffed, greppable, or piped. In practice this
-usually means reaching for one of a handful of well-known structured-text
-formats rather than inventing a new one:
+Provide concrete examples in place of generic references to "the contract."
+Separate edit ownership if multiple helpers build producer and consumer;
+agree the record format and failure behavior before they start.
 
-- **CSV** — tabular data, the lowest-ceremony structured format there is.
-  Opens in a spreadsheet, greps like any other text file, diffs one row
-  per line.
-- **JSON** — nested data with a schema every language already has a
-  parser for. The default for anything an API returns or a program
-  consumes.
-- **YAML** — JSON's more human-writable cousin, for config a person
-  edits directly — this repo's own `SKILL.md` frontmatter is YAML for
-  exactly that reason.
+## Inspect composition
 
-What they share, and why any of them beats a bespoke format:
+- Read the implementation and run or inspect the actual producer-to-consumer
+  example. A plausible command in a report is not evidence that it ran.
+- Check stdout, stderr, and exit status separately. Success may produce
+  useful result data; silence means no decorative chatter, not no output.
+- Check the promised empty-input and malformed-input behavior. In a shell
+  pipeline, verify producer failures are visible rather than masked by a
+  successful last command; use the shell's supported failure handling.
+- Confirm the output needs no banner stripping or knowledge of internal
+  formatting. Text, JSON, CSV, or another established format should fit
+  the consumer; do not force text for an inherently binary artifact.
+- Check that unrelated responsibilities did not enter through convenience
+  flags. Split only when independent jobs and a useful interface justify it.
 
-- **Diffable.** `git diff` on a text config tells a reviewer exactly
-  what changed, one line at a time. A binary blob tells them nothing.
-- **Composable.** `grep`, `sed`, `awk`, `jq`, `yq` all already understand
-  these formats. A new bespoke format means every consumer needs a new
-  parser before it can do anything with the data.
-- **Legible without tooling.** `cat` and a human eye is a debugger of
-  last resort that always works.
+## Steer and accept
 
-This is also the reasoning behind every `SKILL.md` in this repo being
-plain markdown: no build step, no proprietary schema, readable by a human
-or an agent with nothing but a text reader.
+Return corrections as interface failures with evidence:
 
-**Text isn't the only universal interface — it's the shell's version of
-one.** When you aren't working with streams, a common interface or API
-fills the same niche: a narrow, stable seam that any number of unknown
-future callers can plug into without knowing each other's internals.
-Object-oriented design has its own name for choosing that seam well:
-**composition over inheritance.** An inheritance hierarchy couples a
-subclass to its parent's implementation details across generations — the
-OOP equivalent of a proprietary binary format only one program can read.
-Composing small objects behind an interface is the equivalent of piping
-text between programs: each piece stays replaceable, testable, and
-recombinable in ways its author never had to predict. Same discipline,
-different medium.
+> The JSON consumer fails because stdout begins with "Done!". Move the
+> progress message to stderr and rerun the same pipeline. Preserve the
+> JSON schema and verify both streams and the exit status.
 
-## Small tools over monoliths
+If pi builds a monolith, identify the unrelated job and ask for the smallest
+seam. If it fragments a simple tool into many scripts, ask whether callers
+now need unnecessary coordination. Accept when the assigned job composes
+with its consumer and the supported failure cases are observable. Do not
+silently turn a small tool request into a reusable platform.
 
-When a tool starts accumulating flags for unrelated concerns — one flag
-for output format, one for a retry policy, one for a completely different
-input source — that's the signal to split it into two tools that pipe
-together rather than one tool with a mode switch. Two 40-line scripts
-connected by a pipe are easier to test, replace, and understand than one
-200-line script with branches.
-
-The counter-force is real: sometimes a single combined tool is genuinely
-simpler for the caller (see `skills/three-cs` in this repo for the
-parallel argument about hardcoding to ship first). The discipline isn't
-"never combine" — it's noticing when you *are* combining, and asking
-whether the seam belongs between two programs instead of inside one.
-
-## Silence is a feature
-
-A well-behaved Unix program that succeeds says nothing. Output is for
-data or for errors, not for reassurance. Chatty success output is noise
-that has to be filtered out by whatever's downstream — a human or another
-program.
-
-## How this shows up in this repo
-
-- Every skill here is a markdown file, not a binary or a service —
-  greppable, diffable, and requires no runtime beyond a text reader.
-- `skills/concision`'s bundled `tools/ai-tells` does one thing (report
-  writing tells in a file) and reads/writes plain text.
-- `skills/pi-inference-backend`'s verification steps are individually
-  runnable `curl`/`pi` one-liners, not a single opaque setup script — each
-  step is checkable on its own.
-- `skills/herdr-helpers-tab` composes `herdr`'s small pane/tab primitives
-  (`split`, `run`, `rename`) rather than asking for one "make me 4 panes"
-  command that doesn't exist — the herdr CLI itself is built the same way.
-
-## Checklist
-
-- [ ] Does this tool do one job, statable in one sentence?
-- [ ] Does it read/write plain text (or well-known structured text like
-      JSON) — or, in code, expose a narrow interface rather than an
-      inheritance hierarchy — so it composes with callers that don't know
-      it exists?
-- [ ] Is success silent, with errors going to stderr?
-- [ ] If it's grown a mode switch for an unrelated concern, should it be
-      two tools instead?
-- [ ] Could someone else's tool consume this one's output without reading
-      its source first?
+The [Unix doctrine](../../docs/unix-philosophy-doctrine.md) gives background
+on one-job tools, streams, and composition through narrow interfaces.

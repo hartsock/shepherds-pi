@@ -1,110 +1,69 @@
 ---
 name: tdd-red-green-blue
-description: The TDD cycle — Red (write a failing test), Green (minimum code to pass), Blue (refactor while every test stays green). Repeat in small steps.
-when_to_use: Before writing implementation code for any new behavior; when a bug report should become a regression test before a fix; when a function/class has grown past what one read-through can verify.
+description: Shepherd a pi helper through test-driven implementation or a regression fix. Brief one behavior, verify a meaningful Red failure, inspect the minimal Green change, and guide behavior-preserving Blue refactoring using actual test evidence.
 ---
 
-# TDD — Red, Green, Blue
+# Shepherd Red, Green, Blue
 
-Three colors, one cycle, repeated in steps small enough to take minutes,
-not hours:
+You supervise pi's implementation. Keep each cycle small enough to inspect:
+one observable behavior, a test that fails for that reason, a minimal fix,
+then structural cleanup while tests remain green. Use this for behavior
+changes and regression fixes, not to manufacture tests for prose edits.
 
-```
-RED    write a failing test that describes the next desired behavior
-GREEN  write the minimum code that makes it pass
-BLUE   clean up structure — no new behavior, every test still green
-       (some traditions call this step "refactor" — same step, this
-       repo names it for the color scheme: red, green, blue)
-REPEAT
-```
+For helper selection, transport, and blocked-state handling, follow the
+[shared shepherd loop](../../docs/shepherding.md).
 
-If a cycle is taking longer than a few minutes, the step is too big.
-Split it into a smaller one.
+## Set the assignment
 
-## Red — write the failing test first
+Give pi the repository, owned files or isolated worktree, desired behavior,
+counterexample, compatibility constraints, and appropriate test commands.
+Discover the project's test conventions first. If other helpers are active,
+assign separate ownership; do not have them race to edit the same code or
+test. A helper should not spawn more agents or publish changes unless that
+is separately assigned.
 
-Ask, before writing anything:
-- What is the **smallest** behavior worth specifying right now?
-- What is the **simplest** input/output pair that proves it?
-- If this test runs against today's code, will it fail **for the right
-  reason** — missing behavior, not a typo or import error?
+State which checkpoints to return. For an uncertain bug or design, ask for
+Red evidence before assigning the next implementation step. For a small,
+well-understood change, pi may complete the cycle in one turn and return
+the evidence for each phase; human approval is not required at every color.
 
-Structure with Arrange/Act/Assert:
+> In the assigned files, reproduce the specified behavior with one focused
+> test. Run it before the fix and record the command, exit status, and
+> relevant failure. Implement only enough to pass, then run the affected
+> suite. Refactor only after Green, with behavior unchanged, and rerun the
+> affected checks. Report Red, Green, and Blue evidence, changed files,
+> and remaining failures. If the test cannot run, report why; do not claim
+> a Red result. No unrelated changes or further delegation.
 
-```
-# Arrange — set up inputs and dependencies
-# Act        — call the unit under test
-# Assert   — verify the observable outcome
-```
+## Inspect each phase
 
-A good test:
-- has a name that reads like a sentence describing the behavior
-  (`returns_zero_for_empty_input`, not `test1`)
-- tests one behavior — one assertion, or a tightly related group
-- fails before any implementation exists, and fails on the right line
+| Phase | Evidence to inspect | Shepherd's decision |
+|---|---|---|
+| Red | Test diff and pre-fix command, exit status, failure text | Does the assertion expose the requested behavior? An import error, missing tool, or broken fixture is not Red. |
+| Green | Implementation diff, focused result, affected regression results | Does the fix satisfy the contract without weakening assertions or adding speculative behavior? |
+| Blue | Cleanup diff and rerun results | Did only structure change? Is cleanup useful, or is the current design already sufficient? |
 
-**Never write more than one failing test before making it pass.** Stacking
-failing tests loses the thread of which one you're driving toward.
+Read the actual test and implementation; "all green" is a report to
+verify. Run checks proportional to the change and any repository-required
+gates. Record pre-existing failures separately. Do not demand an unrelated,
+expensive full suite at every small step, and do not call a failed required
+gate a pass.
 
-## Green — the minimum implementation
+## Correct drift
 
-- Write **only** enough code to make the current failing test pass.
-- Hardcoding a return value is a legitimate Green step — the next Red test
-  will force generalization. Don't skip ahead to the general solution
-  before a test demands it.
-- Do not add error handling, edge cases, or optimization the current test
-  doesn't require. That belongs to a future Red step.
-- Run the whole suite, not just the new test — Green means nothing broke.
+- **Red is a setup failure:** send pi back to repair the fixture or report
+  the missing prerequisite before implementing the behavior.
+- **Implementation arrived first:** report the missing Red evidence. Where
+  practical, run the new test against the pre-fix code in an isolated copy;
+  do not rewrite shared history or pretend the chronology was test-first.
+- **The test was weakened to pass:** point to the lost assertion and ask
+  pi to restore the contract, then fix the implementation.
+- **Several behaviors or a redesign appeared:** keep the current cycle
+  scoped to one behavior; separate later work rather than expanding silently.
+- **Blue breaks a test:** have the owning helper repair or undo its cleanup
+  before beginning another behavior. Preserve unrelated user changes.
 
-## Blue — refactor only when green
-
-Only touch structure once every test passes:
-- Remove duplication, in both code and tests.
-- Rename for intent.
-- Extract a function when a block does more than one thing.
-- Simplify conditionals.
-- Run the suite again — green after the refactor means behavior was
-  preserved, not just that the code looks nicer.
-
-**Never refactor with a failing test.** Get to green first; a red test
-during a refactor means you can't tell whether you broke behavior or
-were already broken.
-
-## Repeat
-
-Progress looks like a staircase of small cycles, each one hardening the
-implementation toward the general case:
-
-```
-Cycle 1: empty input returns the default        → Red → Green → Blue
-Cycle 2: single item returns that item           → Red → Green → Blue
-Cycle 3: multiple items combine correctly        → Red → Green → Blue
-Cycle 4: invalid input raises the right error    → Red → Green → Blue
-```
-
-## FIRST — what makes a unit test worth keeping
-
-- **F**ast — runs in milliseconds; a slow suite stops getting run.
-- **I**solated — no shared state with other tests; order shouldn't matter.
-- **R**epeatable — same result every run, on any machine, at any time.
-- **S**elf-validating — pass or fail, no human reading output to decide.
-- **T**imely — written just before the code it drives, not after.
-
-## Gotchas
-
-| Pitfall | Fix |
-|---|---|
-| Writing implementation before the test | The test must exist and fail first — that's the whole discipline |
-| Multiple failing tests stacked up | One at a time: get to green before writing the next red |
-| Refactoring with a failing test | Get to green first |
-| Test passes with zero implementation | The assertion is testing nothing — check it |
-| Adding error handling nothing tests for yet | Write the failing error-case test first |
-| Test named `test_1` or `test_login` | Name it after the behavior, not the feature area |
-| Deleting a passing test because the code got simpler | Tests are the specification — don't delete, update deliberately |
-
-## Related
-
-`skills/functional-cohesion` in this repo covers *where* code should live;
-this skill covers *how it gets proven correct as it's written*. They
-compose: drive each cohesive unit's behavior through Red/Green/Blue rather
-than writing a unit whole and testing it after.
+Accept the cycle when the diff matches the assigned behavior and its
+evidence is sound. Report any unrun checks or blockers explicitly. For
+test design details such as Arrange/Act/Assert and FIRST, consult the
+[TDD doctrine](../../docs/tdd-red-green-blue-doctrine.md).

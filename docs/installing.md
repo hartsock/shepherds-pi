@@ -7,6 +7,11 @@ wherever your agent looks for skills. That location differs per agent;
 this doc covers the ones this repo was built around plus a generic
 fallback for anything else.
 
+Install the guidance skills for the **shepherd**, the agent coordinating
+pi helpers. Workers receive focused briefs; they need not discover every
+shepherd skill. The pi installation below applies when pi itself is the
+shepherd, or when you deliberately want these skills available there.
+
 Clone the repo first:
 
 ```bash
@@ -110,3 +115,12 @@ All the commands above use symlinks so `git pull` in
 `~/workspaces/shepherds-pi` updates every agent at once. If your agent
 doesn't follow symlinks, `cp -r` instead — you'll just need to re-copy
 after pulling updates.
+
+## Linked doctrine references
+
+Keep the checkout available: shepherd skills link to longer references in
+`docs/`. Resolve those links relative to the original `SKILL.md` in the
+checkout, following its symlink first. If copying instead of symlinking,
+retain the repository's `skills/` and `docs/` layout or adjust reference
+paths for your installation. Copying only `SKILL.md` omits the references.
+The core shepherd workflow is in each skill; read doctrine only as needed.
