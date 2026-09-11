@@ -107,6 +107,13 @@ near-complete result is not. Give the helper a stop rule for repeated tool
 failure: two consecutive empty or failed calls of the same tool means stop
 and report, not retry a third time.
 
+Bound the size of individual tool calls in the brief, not just the
+assignment: one edit per call, verify, commit, repeat. A batched call that
+applies several non-overlapping edit ranges at once is a single point of
+failure: when it returns empty there is no partial result and no error to
+act on, only silence. A helper with plenty of context left can still wedge
+this way; remaining headroom is not evidence the helper is healthy.
+
 ## Dispatch and observe
 
 Dispatch all ready independent assignments before waiting for final results.
@@ -127,7 +134,9 @@ identical from outside. Check before accepting either: time since the last
 checkpoint against the pace the brief set, presence of the artifacts that
 checkpoint promised, and the pane's actual last output. A pane whose last
 output is the same failed call repeated is evidence of wedging, not of a
-blocked question. Read the pane before deciding:
+blocked question. A pane whose last output is an announcement of work with
+no result following it is the same evidence: the call never returned. Read
+the pane before deciding:
 
 ```sh
 herdr agent read <target> --source recent-unwrapped --lines 200
@@ -165,4 +174,4 @@ needed. Stop when the user's acceptance criteria are met. See the
 
 Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:51 EDT | Date: 2026-09-11
 
-Model: claude-sonnet-5[1m] | Harness: Claude Code | Operator: Shawn Hartsock | Time: 10:54 EDT | Date: 2026-09-11
+Model: claude-sonnet-5[1m] | Harness: Claude Code | Operator: Shawn Hartsock | Time: 11:00 EDT | Date: 2026-09-11
