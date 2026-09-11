@@ -1,7 +1,6 @@
 ---
 name: cross-project-linking
 description: Guide a pi helper in making every property of one system discoverable from every other property. Use when supervising ecosystem navigation, canonical link data, or reciprocal-link acceptance checks.
-license: Apache-2.0
 ---
 
 # Shepherd cross-project linking
