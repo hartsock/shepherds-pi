@@ -29,6 +29,17 @@ force a document edit through TDD or load four full doctrines into one brief.
 1. Resolve the assigned helper and inspect its state before sending work.
    In Herdr, follow the [Herdr skill](../skills/herdr/SKILL.md) and installed
    CLI instructions. This guide does not create a new workspace or flock.
+   Before the first brief to a newly started agent, send the trivial request
+   `reply with one word: ready` and wait for its actual reply. A successful
+   dispatch proves only that text reached the pane, not that the agent's input
+   loop consumed it.
+   An immediate `idle` state or `interactive_ready: true` is not sufficient
+   readiness evidence; the same inspect-don't-assume rule applies. This
+   handshake costs one round trip and prevents a silent failure: an unconsumed
+   brief looks like a working helper that has not reported, and a human often
+   finds it first.
+   Once a worker has responded this session, do not repeat the handshake before
+   every assignment.
 2. Give the helper one concrete result, owned files, constraints, and the
    evidence to return. State whether it may edit or only review. Helpers
    sharing a checkout need disjoint ownership; dependent changes wait for
@@ -53,3 +64,5 @@ Keep checkpoint messages short, but preserve commands and failure details
 needed to verify the work. The shepherd should not substitute a polished
 summary for missing evidence, and a helper should not recursively delegate
 unless that role has explicitly been assigned.
+
+Model: GPT-5 | Harness: Codex | Operator: Shawn Hartsock | Time: 13:24 EDT | Date: 2026-09-11
