@@ -42,4 +42,6 @@ omits an identity, or paraphrases a constraint. Accept when a reader can find
 the actor, action, constraint, and source without guessing. Consult the
 [documented-automation doctrine](../../docs/documented-automation-doctrine.md).
 
+---
+
 Model: GPT-5 | Harness: Codex | Operator: Shawn Hartsock | Time: 13:10 EDT | Date: 2026-09-11
