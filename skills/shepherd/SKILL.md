@@ -122,6 +122,14 @@ oversized call fails the same way. A helper with plenty of context left can
 still wedge this way; remaining headroom is not evidence the helper is
 healthy.
 
+This is a property of the call, not of any one tool. The same failure appears
+when a helper writes a whole new file as when it replaces a region, so
+"prefer writing a new file over editing" is not an escape. When a helper has
+wedged twice on the same payload, stop re-briefing it: take the oversized
+piece yourself or split it into work the helper can emit, and give it back
+the parts it can carry. Its reasoning is usually intact even when its
+emission is not, so read the pane before discarding what it worked out.
+
 ## Dispatch and observe
 
 Dispatch all ready independent assignments before waiting for final results.
