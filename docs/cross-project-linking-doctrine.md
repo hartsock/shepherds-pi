@@ -88,8 +88,9 @@ readers can navigate the system.
 
 ---
 
-The data-versus-logic guidance is adapted from the
-[Three Cs doctrine](three-cs-doctrine.md), which retains its Apache-2.0
-attribution.
+The data-versus-logic guidance applies the rule stated in the
+[Three Cs doctrine](three-cs-doctrine.md). The prose here is original; that
+doctrine carries its own Apache-2.0 attribution and this file does not
+inherit it.
 
-Model: GPT-5.6 | Harness: Codex | Operator: Shawn Hartsock | Time: 13:04 EDT | Date: 2026-09-11
+Model: GPT-5 | Harness: Codex | Operator: Shawn Hartsock | Time: 13:04 EDT | Date: 2026-09-11
