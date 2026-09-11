@@ -51,19 +51,25 @@ get confused by.
 | [`skills/herdr-helpers-tab`](skills/herdr-helpers-tab/SKILL.md) | Recreate a herdr tab with a controller pane plus N idle `pi` panes, ready for another agent to dispatch into |
 | [`skills/tmux-drive`](skills/tmux-drive/SKILL.md) | Drive an interactive TTY/TUI program hands-free from a non-interactive agent, on an isolated tmux server |
 
-**Working style — doctrine that applies once you're building something:**
+**Shepherd guidance: brief pi helpers, inspect their work, and steer corrections.**
+
+These skills are for the controlling agent. Send each helper a focused brief
+with the relevant guidance, then check its artifacts and evidence. See
+[Guiding pi helpers](docs/shepherding.md) for the dispatch and review loop.
 
 | Skill | What it does |
 |---|---|
-| [`skills/tdd-red-green-blue`](skills/tdd-red-green-blue/SKILL.md) | The TDD cycle — Red (failing test), Green (minimum code), Blue (refactor while green) |
-| [`skills/functional-cohesion`](skills/functional-cohesion/SKILL.md) | Group what works together to do one job into a unit named for that job; expose only the seam |
-| [`skills/three-cs`](skills/three-cs/SKILL.md) | Composition, Configuration, Convention — knowledge belongs in data, not logic |
-| [`skills/unix-philosophy`](skills/unix-philosophy/SKILL.md) | Small, composable, text-based tools that do one thing well |
-| [`skills/concision`](skills/concision/SKILL.md) | One editing pass for outward writing: decompose, compress, de-tell |
+| [`skills/tdd-red-green-blue`](skills/tdd-red-green-blue/SKILL.md) | Guide pi through Red, Green, and Blue; verify test evidence and correct drift |
+| [`skills/functional-cohesion`](skills/functional-cohesion/SKILL.md) | Supporting doctrine: group code by job and expose a narrow interface |
+| [`skills/three-cs`](skills/three-cs/SKILL.md) | Guide pi to separate domain data from mechanisms without speculative frameworks |
+| [`skills/unix-philosophy`](skills/unix-philosophy/SKILL.md) | Brief a single tool contract and verify pi's output composes with its consumer |
+| [`skills/concision`](skills/concision/SKILL.md) | Brief pi on audience and purpose; review its draft for clarity without losing meaning |
 
 Deeper reference material that doesn't belong inline in a skill lives in
 [`docs/`](docs/):
 
+- [`docs/shepherding.md`](docs/shepherding.md) — how the shepherd assigns,
+  checks, and corrects pi work; each shepherd skill links its longer doctrine
 - [`docs/pi-config-reference.md`](docs/pi-config-reference.md) — `pi`'s
   three config files (`models.json`, `settings.json`, `auth.json`) and how
   they interact
@@ -80,8 +86,8 @@ Claude Code, Codex, pi, and any other agent that reads `SKILL.md` files.
 ## License
 
 MIT for everything authored in this repo — see [`LICENSE`](LICENSE).
-`skills/herdr`, `skills/tmux-drive`, `skills/three-cs`, and
-`skills/functional-cohesion` are mirrored verbatim from Shawn Hartsock's
+`skills/herdr` and `skills/tmux-drive` are mirrored from Shawn Hartsock's
 [newt-agent](https://github.com/Gilamonster-Foundation/newt-agent) under
-its Apache-2.0 license; each of those files carries its own `license:`
-frontmatter and a source footer.
+its Apache-2.0 license. `skills/three-cs` and `skills/functional-cohesion`
+are adaptations under the same license. Their source notices identify the
+changes; the three-Cs doctrine reference also retains its attribution.
