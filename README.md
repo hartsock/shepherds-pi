@@ -15,13 +15,26 @@ for a shepherding agent to dispatch work into.
 A skills repo, in the style of [ponytail](https://github.com/DietrichGebert/ponytail):
 plain-text instructions for standing up a **[herdr](https://herdr.dev)**
 workspace, wiring **[pi](https://github.com/earendil-works/pi)** to an
-inference backend of your choice, and raising a flock of idle helper panes
-ready for another agent to shepherd. Bring your own backend, your own
-model, your own repo.
+inference backend of your choice, and shepherding bounded parallel assignments
+through artifact review, correction, and integration. Bring your own backend,
+your own model, your own repo.
 
 ![Codex shepherding two pi agents through parallel reviews in Herdr](assets/shepherd-demo.gif)
 
 *Codex dispatches two pi helpers and reads their progress. Recorded at 2.5× speed.*
+
+## Start shepherding
+
+Install the [core skills](docs/installing.md), then use
+[`shepherd`](skills/shepherd/SKILL.md) to turn a task into a checked result:
+
+> Use shepherd to split this task into independent assignments for Pi helpers.
+> Give each helper bounded ownership and acceptance checks, dispatch ready work
+> together, inspect the artifacts, and integrate the result. Keep dependent
+> work ordered and report any blocker.
+
+Reuse a verified flock, or follow setup when one is needed. For an indivisible
+small task, take the short serial path. See [worked assignments](docs/shepherding.md).
 
 ## What is Herdr?
 
@@ -41,53 +54,33 @@ get confused by.
 
 ## In this repo
 
-**Setup — get pi and herdr running:**
+| Layer | Skills | Role |
+|---|---|---|
+| Core | [shepherd](skills/shepherd/SKILL.md), [herdr](skills/herdr/SKILL.md), [herdr-helpers-tab](skills/herdr-helpers-tab/SKILL.md) | Plan and conduct the work; control or prepare helpers when needed |
+| Setup | [pi-install](skills/pi-install/SKILL.md), [pi-inference-backend](skills/pi-inference-backend/SKILL.md) | Install Pi and configure the chosen backend |
+| Specialist guidance | [TDD](skills/tdd-red-green-blue/SKILL.md), [concision](skills/concision/SKILL.md), [three Cs](skills/three-cs/SKILL.md), [Unix philosophy](skills/unix-philosophy/SKILL.md), [cohesion](skills/functional-cohesion/SKILL.md) | Brief and review the relevant artifact |
+| Optional terminal tooling | [tmux-drive](skills/tmux-drive/SKILL.md) | Drive other interactive TTY programs |
 
-| Skill | What it does |
-|---|---|
-| [`skills/pi-install`](skills/pi-install/SKILL.md) | Install `pi` and confirm it runs |
-| [`skills/pi-inference-backend`](skills/pi-inference-backend/SKILL.md) | Point `pi` at any OpenAI-compatible inference endpoint and set a model as the CLI-wide default |
-| [`skills/herdr`](skills/herdr/SKILL.md) | The herdr CLI itself — workspaces, tabs, panes, and agent control, straight from the tool's own authority (`herdr --help`) |
-| [`skills/herdr-helpers-tab`](skills/herdr-helpers-tab/SKILL.md) | Recreate a herdr tab with a controller pane plus N idle `pi` panes, ready for another agent to dispatch into |
-| [`skills/tmux-drive`](skills/tmux-drive/SKILL.md) | Drive an interactive TTY/TUI program hands-free from a non-interactive agent, on an isolated tmux server |
-
-**Shepherd guidance: brief pi helpers, inspect their work, and steer corrections.**
-
-These skills are for the controlling agent. Send each helper a focused brief
-with the relevant guidance, then check its artifacts and evidence. See
-[Guiding pi helpers](docs/shepherding.md) for the dispatch and review loop.
-
-| Skill | What it does |
-|---|---|
-| [`skills/tdd-red-green-blue`](skills/tdd-red-green-blue/SKILL.md) | Guide pi through Red, Green, and Blue; verify test evidence and correct drift |
-| [`skills/functional-cohesion`](skills/functional-cohesion/SKILL.md) | Supporting doctrine: group code by job and expose a narrow interface |
-| [`skills/three-cs`](skills/three-cs/SKILL.md) | Guide pi to separate domain data from mechanisms without speculative frameworks |
-| [`skills/unix-philosophy`](skills/unix-philosophy/SKILL.md) | Brief a single tool contract and verify pi's output composes with its consumer |
-| [`skills/concision`](skills/concision/SKILL.md) | Brief pi on audience and purpose; review its draft for clarity without losing meaning |
-
-Deeper reference material that doesn't belong inline in a skill lives in
-[`docs/`](docs/):
-
-- [`docs/shepherding.md`](docs/shepherding.md) — how the shepherd assigns,
-  checks, and corrects pi work; each shepherd skill links its longer doctrine
-- [`docs/pi-config-reference.md`](docs/pi-config-reference.md) — `pi`'s
-  three config files (`models.json`, `settings.json`, `auth.json`) and how
-  they interact
-- [`docs/installing.md`](docs/installing.md) — per-agent skill install
-  commands (Claude Code, Codex, pi, and a generic fallback)
+Install skills for the controlling agent. Workers receive focused briefs and
+the relevant review criteria. Longer doctrine and the
+[Pi configuration reference](docs/pi-config-reference.md) live in `docs/`.
 
 ## Installing the skills
 
-Each skill is a self-contained `SKILL.md` (some carry a small bundled
-`tools/` script) — plain markdown, no framework dependency. See
-[`docs/installing.md`](docs/installing.md) for the symlink command for
-Claude Code, Codex, pi, and any other agent that reads `SKILL.md` files.
+The [installer](docs/installing.md) links the three core skill directories by
+default and refuses collisions. Add setup or specialist skills by name, or
+choose the full library explicitly. Keep this checkout available so linked
+references and bundled tools remain accessible.
 
 ## License
 
 MIT for everything authored in this repo — see [`LICENSE`](LICENSE).
-`skills/herdr` and `skills/tmux-drive` are mirrored from Shawn Hartsock's
-[newt-agent](https://github.com/Gilamonster-Foundation/newt-agent) under
-its Apache-2.0 license. `skills/three-cs` and `skills/functional-cohesion`
-are adaptations under the same license. Their source notices identify the
-changes; the three-Cs doctrine reference also retains its attribution.
+`skills/tmux-drive` is mirrored from Shawn Hartsock's
+[newt-agent](https://github.com/Gilamonster-Foundation/newt-agent) under its
+Apache-2.0 license. `skills/herdr`, `skills/three-cs`, and
+`skills/functional-cohesion` are adaptations under the same license. Source
+notices identify changes; the doctrine references retain their attribution.
+
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:51 EDT | Date: 2026-09-11
+
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:59 EDT | Date: 2026-09-11

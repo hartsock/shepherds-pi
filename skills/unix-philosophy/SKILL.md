@@ -12,7 +12,7 @@ for findings instead of edits. Do not split a tool merely because it has
 several flags or a long help page.
 
 For helper selection, transport, and blocked-state handling, follow the
-[shared shepherd loop](../../docs/shepherding.md).
+[shepherd workflow](../shepherd/SKILL.md).
 
 ## Brief the interface before the implementation
 
@@ -63,3 +63,5 @@ silently turn a small tool request into a reusable platform.
 
 The [Unix doctrine](../../docs/unix-philosophy-doctrine.md) gives background
 on one-job tools, streams, and composition through narrow interfaces.
+
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:54 EDT | Date: 2026-09-11

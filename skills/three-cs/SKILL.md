@@ -12,7 +12,7 @@ and safety enforcement remain code. Working behavior comes first. Do not
 turn a single known case into a speculative configuration framework.
 
 For helper selection, transport, and blocked-state handling, follow the
-[shared shepherd loop](../../docs/shepherding.md).
+[shepherd workflow](../shepherd/SKILL.md).
 
 ## Brief from the working code
 
@@ -77,3 +77,5 @@ Adapted from Shawn Hartsock's [newt-agent](https://github.com/Gilamonster-Founda
 `bundled-skills/three-cs`, Apache-2.0. Modified into shepherd instructions
 for briefing, inspecting, and steering pi helpers. The longer doctrine
 and its prior adaptation notice are retained in the linked reference.
+
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:54 EDT | Date: 2026-09-11

@@ -1,126 +1,67 @@
 # Installing the skills
 
-Every skill in this repo is a plain `SKILL.md` (some carry a small bundled
-`tools/` script) — there's no build step and no framework dependency.
-Installing means getting that file (or its containing directory) into
-wherever your agent looks for skills. That location differs per agent;
-this doc covers the ones this repo was built around plus a generic
-fallback for anything else.
+Install on the machine where the shepherd runs. Keep the checkout available:
+skill directories link to shared doctrine in `docs/`. Workers receive focused
+briefs and need not discover the shepherd's full skill library.
 
-Install the guidance skills for the **shepherd**, the agent coordinating
-pi helpers. Workers receive focused briefs; they need not discover every
-shepherd skill. The pi installation below applies when pi itself is the
-shepherd, or when you deliberately want these skills available there.
-
-Clone the repo first:
-
-```bash
-git clone https://github.com/hartsock/shepherds-pi.git ~/workspaces/shepherds-pi
+```sh
+git clone https://github.com/hartsock/shepherds-pi.git
+cd shepherds-pi
+python3 tools/install-skills.py --target "$HOME/.agents/skills"
 ```
 
-## Claude Code
+Python 3.9+ is required for the installer; it uses only the standard library.
+By default it installs `shepherd`, `herdr`, and `herdr-helpers-tab`. It links
+whole directories, leaves already-correct links alone, and checks all selected
+names for collisions before creating links. A collision leaves existing skills
+untouched; choose project scope or reconcile that name explicitly.
 
-Global skills directory: `~/.claude/skills/`. Project-local:
-`.claude/skills/` inside a repo.
+| Shepherd | Example install target |
+|---|---|
+| Codex | `.agents/skills` in the project or the agent's global skills directory |
+| Claude Code | `.claude/skills` in the project or the agent's global skills directory |
+| Pi as the shepherd | `.agents/skills` in the project or Pi's configured skills directory |
+| Other harness | Its documented directory of skill folders |
 
-```bash
-for skill in ~/workspaces/shepherds-pi/skills/*/; do
-  name=$(basename "$skill")
-  mkdir -p ~/.claude/skills/"$name"
-  ln -sf "$skill/SKILL.md" ~/.claude/skills/"$name"/SKILL.md
-  [ -d "$skill/tools" ] && ln -sfn "$skill/tools" ~/.claude/skills/"$name"/tools
-done
+Pass the selected directory through `--target`. Install in the intended
+project when it differs from this library's checkout. The global example above
+uses the shared agent-skills directory; Claude Code users can instead use
+`--target "$HOME/.claude/skills"`.
+
+## Add only the guidance you need
+
+Use `--skill` repeatedly to add named skills to the core installation:
+
+```sh
+python3 tools/install-skills.py --target "$HOME/.agents/skills" \
+  --skill pi-install --skill pi-inference-backend
+python3 tools/install-skills.py --target "$HOME/.agents/skills" \
+  --skill tdd-red-green-blue --skill unix-philosophy
 ```
 
-Swap `~/.claude/skills/` for `.claude/skills/` (relative to a repo root) to
-install project-scoped instead of global.
+Concision, three Cs, and functional cohesion are also optional review guidance.
+`tmux-drive` is for other interactive programs; normal flock work uses Herdr.
+To install everything explicitly:
 
-## Codex
-
-Global skills directory: `~/.codex/skills/`, same `<name>/SKILL.md` shape
-as Claude Code.
-
-```bash
-for skill in ~/workspaces/shepherds-pi/skills/*/; do
-  name=$(basename "$skill")
-  mkdir -p ~/.codex/skills/"$name"
-  ln -sf "$skill/SKILL.md" ~/.codex/skills/"$name"/SKILL.md
-  [ -d "$skill/tools" ] && ln -sfn "$skill/tools" ~/.codex/skills/"$name"/tools
-done
+```sh
+python3 tools/install-skills.py --target "$HOME/.agents/skills" --all
 ```
 
-## pi
+Selection controls new links. Running the installer again does not uninstall
+previously installed optional skills or change the agent's other configuration.
 
-`pi` discovers skills from several places, in order of precedence — see
-`pi --help` (`--skill`, `--no-skills`) for the authoritative list. Two are
-relevant here:
+## Follow resources from the source directory
 
-- **`~/.pi/agent/skills/`** — pi-specific, global.
-- **`~/.agents/skills/`** (global) and **`.agents/skills/`** (project,
-  walked up to the repo root) — a shared, cross-tool convention pi reads
-  natively. Installing here means pi picks the skill up with **no
-  pi-specific step at all**:
+Resolve each installed skill directory's symlink before following relative
+references into this repository. This preserves both `tools/` resources and
+shared `docs/` paths. If the harness cannot follow symlinks, point it at the
+checkout directly or retain the repository layout when copying. Copying only
+`SKILL.md` loses those references.
 
-```bash
-for skill in ~/workspaces/shepherds-pi/skills/*/; do
-  name=$(basename "$skill")
-  mkdir -p ~/.agents/skills/"$name"
-  ln -sf "$skill/SKILL.md" ~/.agents/skills/"$name"/SKILL.md
-  [ -d "$skill/tools" ] && ln -sfn "$skill/tools" ~/.agents/skills/"$name"/tools
-done
-```
+Once tools and workers are ready, start with
+[shepherd](../skills/shepherd/SKILL.md). Its
+[worked examples](shepherding.md) cover review, editing, and a small serial task.
 
-Use `.agents/skills/` (relative to a repo root, no leading `~`) instead to
-scope it to one project.
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:53 EDT | Date: 2026-09-11
 
-You can also load one skill for a single run without installing anything:
-
-```bash
-pi --skill ~/workspaces/shepherds-pi/skills/pi-inference-backend
-```
-
-## Any other agent
-
-Most agents that support markdown skills at all use one of two shapes:
-a single directory of `<name>/SKILL.md` folders, or a single directory of
-`<name>.md` files. Check that agent's own docs for the directory it
-scans, then apply the same symlink loop:
-
-```bash
-TARGET_SKILLS_DIR=/path/your/agent/uses
-
-for skill in ~/workspaces/shepherds-pi/skills/*/; do
-  name=$(basename "$skill")
-  mkdir -p "$TARGET_SKILLS_DIR/$name"
-  ln -sf "$skill/SKILL.md" "$TARGET_SKILLS_DIR/$name/SKILL.md"
-  [ -d "$skill/tools" ] && ln -sfn "$skill/tools" "$TARGET_SKILLS_DIR/$name/tools"
-done
-```
-
-If the agent wants flat `<name>.md` files instead of `<name>/SKILL.md`
-directories, symlink the file directly under a renamed target instead of
-the loop above:
-
-```bash
-ln -sf ~/workspaces/shepherds-pi/skills/tdd-red-green-blue/SKILL.md \
-       "$TARGET_SKILLS_DIR/tdd-red-green-blue.md"
-```
-
-(That drops any bundled `tools/`, since a flat-file convention has nowhere
-to put it — only `skills/concision` in this repo carries one.)
-
-## Symlinks vs. copies
-
-All the commands above use symlinks so `git pull` in
-`~/workspaces/shepherds-pi` updates every agent at once. If your agent
-doesn't follow symlinks, `cp -r` instead — you'll just need to re-copy
-after pulling updates.
-
-## Linked doctrine references
-
-Keep the checkout available: shepherd skills link to longer references in
-`docs/`. Resolve those links relative to the original `SKILL.md` in the
-checkout, following its symlink first. If copying instead of symlinking,
-retain the repository's `skills/` and `docs/` layout or adjust reference
-paths for your installation. Copying only `SKILL.md` omits the references.
-The core shepherd workflow is in each skill; read doctrine only as needed.
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:59 EDT | Date: 2026-09-11

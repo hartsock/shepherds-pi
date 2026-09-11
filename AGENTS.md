@@ -1,35 +1,37 @@
-# AGENTS.md — Shepherd's Pi
+# AGENTS.md: Shepherd's Pi
 
-If you are an agent that landed in this repo: this is a skills library, not
-an application. There is nothing to build or run at the repo root. Each
-directory under `skills/` is independent — read its `SKILL.md`, do what it
-says, done.
+This is a skills library for coordinating Pi helpers. Start with
+[skills/shepherd/SKILL.md](skills/shepherd/SKILL.md) when the user assigns
+shepherding or parallel helper work. It covers decomposition, bounded briefs,
+parallel dispatch, correction, and integration. A helper assigned a brief
+executes it; it does not start another delegation chain.
 
-## Order of operations, if setting up from scratch
+Reading or editing this library does not authorize creating a live flock.
+The user's task determines what setup and external actions are authorized.
 
-1. `skills/pi-install` — get `pi` on the machine, confirm `pi --help` runs.
-2. `skills/pi-inference-backend` — point `pi` at an inference endpoint and
-   set a default model, so bare `pi` (no flags) launches ready to work.
-3. `skills/herdr` — the herdr CLI reference, if herdr is also in play.
-4. `skills/herdr-helpers-tab` — stand up a tab of idle `pi` panes for
-   another agent to dispatch into.
-5. `skills/tmux-drive` — when a program needs a real TTY and neither `pi`
-   nor herdr apply (an installer, a REPL, any TUI).
+## Setup when needed
 
-The skills `concision`, `tdd-red-green-blue`, `three-cs`, and
-`unix-philosophy` guide the shepherd in briefing, inspecting, and steering
-pi helpers. They are not setup steps or blanket instructions for workers
-to delegate again. Read `docs/shepherding.md` for the coordination loop.
-`functional-cohesion` remains supporting design doctrine.
+Use existing tools and verified workers first. For initial setup, follow
+`skills/pi-install`, `skills/pi-inference-backend`, `skills/herdr`, and
+`skills/herdr-helpers-tab` in that order. Once ready, return to `shepherd`.
+Keep the operator's focus and existing work intact.
 
-## Conventions this repo follows
+Specialist guidance is optional: `tdd-red-green-blue`, `concision`, `three-cs`,
+`unix-philosophy`, and `functional-cohesion` supply task-specific review
+criteria. `tmux-drive` supports other TTY programs and is outside the default
+flock workflow. Workers receive focused briefs, not the whole doctrine library.
 
-- No secrets, tokens, or vendor-internal endpoints anywhere in this repo.
-  Every skill that needs a backend, a key, or a model name takes it as a
-  placeholder/variable — never a hardcoded real value.
-- Every skill is a plain `SKILL.md` with YAML frontmatter (`name`,
-  `description`, optional `argument-hint`) followed by markdown. No build
-  step, no runtime dependency beyond what a skill's own `tools/` says it
-  needs.
-- `docs/` holds reference material too long or too detailed to inline in a
-  skill. Skills link to `docs/`; `docs/` doesn't duplicate skill content.
+## Conventions
+
+- No secrets, tokens, or vendor-internal endpoints in this repository.
+  Backend, credential, and model examples use placeholders.
+- Skills use YAML frontmatter with `name` and `description`, then Markdown.
+  Preserve license and authorship notices.
+- Keep shared reference material in `docs/`; resolve a skill's directory
+  symlink before following relative links. Avoid duplicate coordination loops.
+- The installer uses the Python standard library. For installer changes, run
+  `python3 -B -m unittest discover -s tests -v` and `git diff --check`.
+  There is no root application build. Skill syntax checks do not prove live
+  orchestration behavior; use the cases in `docs/shepherding.md` as appropriate.
+
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:51 EDT | Date: 2026-09-11

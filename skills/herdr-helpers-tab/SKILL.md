@@ -1,77 +1,66 @@
 ---
 name: herdr-helpers-tab
-description: Recreate a herdr "Helpers" tab — a controller pane plus N idle CLI-agent panes, ready for another agent to dispatch work into
-argument-hint: "[count]"
+description: Prepare or reuse a Herdr Helpers tab with verified idle Pi workers for a shepherd. Use when the operator requests a flock or an authorized task needs additional helper capacity.
 ---
 
-# Setup the Helpers Tab
+# Prepare Pi helpers
 
-Recreate a herdr tab named `Helpers`: one controller pane on top, and below
-it a row of equal-width panes each running a bare, idle CLI coding-agent
-session (e.g. `pi` — see `skills/pi-install` and
-`skills/pi-inference-backend` in this repo). The panes are a dispatch
-pool — meant for another agent to hand work into, not for direct
-interactive use.
+Follow [Herdr](../herdr/SKILL.md) in the intended execution host and session.
+Use installed CLI help for current syntax. Verify Pi's configured backend
+with [setup guidance](../pi-inference-backend/SKILL.md) when needed. Keep the
+operator's configured model and provider unless the assignment specifies others.
 
-Trigger phrase: **"Setup the Helpers Tab"**. Default count is 4 panes unless
-told otherwise.
+For a task, size the flock to independent ready work. For a setup-only request,
+use the requested count, or four workers when unspecified, and leave them idle.
+For edits, assign separate worktrees and owned files before starting workers
+in those directories. [Shepherd](../shepherd/SKILL.md) owns that plan.
 
-Which CLI/model each helper pane runs is a local configuration choice, not
-part of this skill — launch whatever the operator's default agent CLI is
-(invoked bare, no flags), so it picks up whatever backend/model is already
-configured as that CLI's default.
+## Inspect and prepare
 
-## Prerequisite
+Inspect existing tabs, panes, and agents with explicit workspace targets.
+Reuse only workers whose identity, state, directory, and ownership are known.
+Create missing capacity in verified empty shell panes; leave existing work
+intact. Never send a shell command into a running agent.
 
-`herdr` itself: `brew install herdr` (macOS/Linuxbrew) — or see
-[herdr.dev](https://herdr.dev) for other install paths. This skill assumes
-the `herdr` CLI is on `PATH` and its socket-API server is already running
-(the `herdr` command starts it automatically on first launch).
+For a new Helpers tab, use the caller's workspace and preserve focus:
 
-## Procedure
+```sh
+herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" \
+  --label Helpers --no-focus
+```
 
-1. Check for an existing `Helpers` tab: `herdr tab list`. Reuse it if
-   present; otherwise create one focused: `herdr tab create --label Helpers
-   --focus`. Note the resulting controller pane's `pane_id`.
+Read returned tab and pane IDs. Split with explicit pane IDs, assigned working
+directories, and `--no-focus`. Use a balanced layout: a 2-by-2 helper grid keeps
+four workers readable. Do not infer IDs from visual positions or reuse an
+unrelated Helpers tab merely because its label matches.
 
-2. Split the controller pane **down** to reserve the bottom of the tab for
-   the helper row (ratio ~0.34 keeps the controller pane as the top third):
-   `herdr pane split --pane <controller_id> --direction down --ratio 0.34`
-   → returns the new bottom pane's `pane_id`.
+## Start and verify
 
-3. Split that bottom pane **right, ratio 0.5**, repeatedly to divide it into
-   N equal columns. For N=4: one split right (0.5) gives two halves, then
-   split each half right (0.5) again gives four equal panes. In general,
-   for N panes (N a power of 2), do `log2(N)` rounds of right-splits at
-   ratio 0.5 starting from the single bottom pane, always splitting the
-   newest/rightmost remaining pane at each step until N panes exist. For a
-   non-power-of-2 N, split with decreasing ratios (`1/N`, `1/(N-1)`, …) so
-   each resulting pane is equal width.
+Check the agent roster for name collisions. In each verified shell pane,
+start Pi with a unique name using its configured defaults:
 
-4. Launch the CLI agent bare (no model/provider flags) in each of the N
-   panes: `herdr pane run <pane_id> <agent-command>`.
+```sh
+herdr agent start pi-01 --kind pi --pane <helper-pane-id>
+```
 
-5. Label them for the roster in launch order: `herdr pane rename <pane_id>
-   01` (…02, 03, …).
+When the assignment specifies explicit model/provider flags, pass those after
+`--` according to installed help. Credentials stay with their configured
+provider; do not put them in pane commands, prompts, or command arguments.
 
-6. Most CLI agents that ship a herdr integration self-report their agent
-   identity and session once launched (`herdr integration status` shows
-   which are wired up; `herdr integration install <agent>` if not) — no
-   manual `herdr pane report-agent` call is normally needed. Confirm with
-   `herdr pane list` that each pane shows the expected `"agent"` field.
+Start workers sequentially and inspect readiness after each launch. Verify
+identity, model, and the assigned directory before dispatch. `idle` or `done`
+can indicate readiness; `blocked` needs attention and `unknown` needs inspection.
+Stop adding capacity on the first readiness or inference failure. Do not focus
+a tab merely to change its status label.
 
-## Verify
+## Return to shepherding
 
-`herdr pane read <pane_id> --lines 3` on each helper pane — `agent_status`
-should read `"idle"` and the pane's status line should show the CLI is up
-and waiting for input.
+Report the observed names, pane IDs, directories, model, and readiness. A
+setup-only request ends here. When work is assigned, return to
+[shepherd](../shepherd/SKILL.md) to brief helpers, dispatch independent work
+before waiting, inspect artifacts, correct defects, and integrate results.
+The [worked assignments](../../docs/shepherding.md) show the full workflow.
 
-## Related
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:53 EDT | Date: 2026-09-11
 
-Once the panes exist, driving actual work through them — dispatching
-briefs, verifying pickup, monitoring by artifact instead of by title,
-steering corrections back to the owning pane — is a separate, larger
-discipline: see Shawn Hartsock's
-[`herdr-dispatcher`](https://github.com/Gilamonster-Foundation/newt-agent/blob/main/.newt/bundled-skills/herdr-dispatcher/SKILL.md)
-skill (distilled from ~60 real multi-lane merges). This repo only covers
-standing the panes up; that skill covers running a fleet through them.
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:59 EDT | Date: 2026-09-11

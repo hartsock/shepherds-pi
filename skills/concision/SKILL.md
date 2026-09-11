@@ -12,7 +12,7 @@ the shepherd, the same instructions apply to its helpers. A helper given
 an editing brief should edit, not start another delegation chain.
 
 For helper selection, transport, and blocked-state handling, follow the
-[shared shepherd loop](../../docs/shepherding.md).
+[shepherd workflow](../shepherd/SKILL.md).
 
 ## Brief the helper
 
@@ -65,3 +65,5 @@ Inspect the next revision for both the correction and lost meaning. Accept
 when the reader can act and further cuts would remove useful content.
 If a material fact is missing, report that gap instead of asking pi to
 invent it. Do not keep polishing an accepted draft without a new reason.
+
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:54 EDT | Date: 2026-09-11

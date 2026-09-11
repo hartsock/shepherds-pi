@@ -11,7 +11,7 @@ then structural cleanup while tests remain green. Use this for behavior
 changes and regression fixes, not to manufacture tests for prose edits.
 
 For helper selection, transport, and blocked-state handling, follow the
-[shared shepherd loop](../../docs/shepherding.md).
+[shepherd workflow](../shepherd/SKILL.md).
 
 ## Set the assignment
 
@@ -67,3 +67,5 @@ Accept the cycle when the diff matches the assigned behavior and its
 evidence is sound. Report any unrun checks or blockers explicitly. For
 test design details such as Arrange/Act/Assert and FIRST, consult the
 [TDD doctrine](../../docs/tdd-red-green-blue-doctrine.md).
+
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:54 EDT | Date: 2026-09-11
