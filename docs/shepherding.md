@@ -1,55 +1,131 @@
-# Guiding pi helpers
+# Guiding Pi helpers
 
-The shepherd owns the user's task, decomposes work, assigns a bounded brief,
-checks artifacts and evidence, and decides what correction or next step is
-needed. A pi helper carries out its brief. The shepherd can be Codex, Claude,
-pi, or another agent capable of coordinating the helpers.
+Start with [shepherd](../skills/shepherd/SKILL.md). It owns the coordination
+loop from task decomposition through a checked, integrated result. This page
+shows how to apply it; setup is in [installing](installing.md).
 
-Install the shepherd skills where the controlling agent reads skills. A
-worker does not need the entire doctrine library: send it the relevant
-instructions, source paths it can access, and acceptance criteria. If a
-reference lives only on the shepherd's machine, include the needed excerpt
-in the brief instead of sending an inaccessible path.
+## Parallel review
 
-## Choose the guidance
+With a verified Herdr flock available, ask:
 
-| Work assigned to pi | Shepherd skill | Evidence to collect |
-|---|---|---|
-| Write or revise a document | [concision](../skills/concision/SKILL.md) | Draft or diff compared with source facts and reader needs |
-| Implement behavior or fix a regression | [tdd-red-green-blue](../skills/tdd-red-green-blue/SKILL.md) | Meaningful pre-fix failure, passing fix, cleanup results |
-| Extract configurable knowledge | [three-cs](../skills/three-cs/SKILL.md) | Data boundary, supported override, preserved defaults and invariants |
-| Build a CLI or composable interface | [unix-philosophy](../skills/unix-philosophy/SKILL.md) | Actual consumer example, output streams, failure statuses |
+> Use shepherd to have two Pi helpers review this repository. One inspects
+> test coverage and one inspects error handling. Require file and line
+> evidence, reconcile their findings, and propose the smallest useful next
+> action. Review only; leave source files unchanged.
 
-Combine only the guidance the task needs. For example, use TDD to supervise
-a CLI bug fix and Unix philosophy to check its output contract. Do not
-force a document edit through TDD or load four full doctrines into one brief.
+| Task and artifact | Worker | Dependencies | Ownership | Acceptance evidence |
+|---|---|---|---|---|
+| Coverage findings | First verified helper | None | Read-only checkout; its own report | Existing behavior and located coverage gaps |
+| Error-handling findings | Second verified helper | None | Same read-only checkout; its own report | Located failure paths and their caller impact |
+| Reconciled review | Shepherd | Both reports | Final assessment | Claims checked against source; overlaps resolved |
 
-## Dispatch, inspect, steer
+Substitute live names and concrete paths into the briefs. Dispatch both
+reviews without waiting for either to finish, then inspect progress and
+artifacts. If one helper is blocked, keep collecting the other's work.
+The final review must resolve disagreements rather than concatenate reports.
 
-1. Resolve the assigned helper and inspect its state before sending work.
-   In Herdr, follow the [Herdr skill](../skills/herdr/SKILL.md) and installed
-   CLI instructions. This guide does not create a new workspace or flock.
-2. Give the helper one concrete result, owned files, constraints, and the
-   evidence to return. State whether it may edit or only review. Helpers
-   sharing a checkout need disjoint ownership; dependent changes wait for
-   the prior artifact or use an explicitly chosen isolation strategy.
-3. Submit the brief through the agent transport. For Herdr, use
-   `herdr agent prompt <target> <brief>` with a live name or pane ID.
-   Dispatch independent assignments before waiting for their results.
-4. Read progress and final artifacts. An idle or done state is a cue to
-   inspect, not proof of correctness. A working helper should not receive
-   repeated copies of the same assignment. On a timeout or blocked state,
-   inspect the cause before retrying; report a missing prerequisite rather
-   than repeatedly resubmitting an impossible task.
-5. Return a specific defect, the evidence that exposes it, and the smallest
-   correction. Keep the correction with the helper that owns the change.
-   If feedback repeats without progress, narrow the task or resolve the
-   missing context instead of issuing another vague retry.
-6. Accept when the assigned behavior or artifact satisfies its criteria.
-   Report checked results, unverified claims, and remaining limitations.
-   An accepted helper result does not itself authorize publication or merge.
+## Parallel edits with a shared interface
 
-Keep checkpoint messages short, but preserve commands and failure details
-needed to verify the work. The shepherd should not substitute a polished
-summary for missing evidence, and a helper should not recursively delegate
-unless that role has explicitly been assigned.
+For a producer/consumer change, agree the record shape and failure behavior
+before assigning either side. Give each helper a separate worktree from a
+known base, its own implementation and test files, and the shared contract.
+If the contract itself must change, assign one owner and make dependent work
+wait for the accepted contract. Read-only research can proceed meanwhile.
+
+Require each helper's diff and observed checks. The shepherd then brings the
+accepted changes together and runs the actual producer-to-consumer check.
+Two passing local suites can still disagree on field names or exit behavior.
+Return such a defect to its owner, preserving the agreed interface.
+
+Use [TDD](../skills/tdd-red-green-blue/SKILL.md) for behavior evidence,
+[Unix philosophy](../skills/unix-philosophy/SKILL.md) for the interface, and
+[cohesion](../skills/functional-cohesion/SKILL.md) when the ownership boundary
+needs review. Include only the relevant parts in each worker brief.
+
+## A small serial task
+
+A one-sentence correction may have no independent work worth dispatching.
+Handle it directly and check the result. The purpose of shepherding is useful
+progress toward the outcome; worker count is not an acceptance criterion.
+
+## A large task, bounded into several assignments
+
+A request to "fix these seven code-review findings" is a program, not an
+assignment. Decompose it before dispatch:
+
+| Task and artifact | Worker | Dependencies | Ownership | Acceptance evidence |
+|---|---|---|---|---|
+| Findings 1 and 3, committed | First helper | None | Its own worktree | Commit SHA; one-line status per finding |
+| Findings 2 and 5, committed | Second helper | None | Its own worktree | Commit SHA; one-line status per finding |
+| Remaining findings | Shepherd or a later helper | First two committed | Known base | Combined diff checked against all seven |
+
+Each brief names the checkpoint cadence (commit and report after each
+finding, not after all of them) and the hand-off path to use if context runs
+short. A helper that checkpoints after finding 1 leaves recoverable work even
+if it wedges on finding 3.
+
+## A wedged helper
+
+A helper reports `idle` after a long stretch with no checkpoint since early
+in the run. Before accepting the report:
+
+1. Read the pane: `herdr agent read <target> --source recent-unwrapped --lines 200`.
+   The last visible output is the same tool call, repeated, with an empty or
+   failed result.
+2. Check the worktree for uncommitted changes the checkpoints should have
+   captured. Find them uncommitted, including an untracked file.
+3. Commit the recoverable work before doing anything else. Do not discard
+   the worktree.
+4. Dispatch a replacement with the original brief, the commit SHA of the
+   rescued work, and the findings still open. The replacement does not
+   repeat work already committed.
+
+Treat this as the default response to `idle` or `done` on a long-running
+assignment, not a rare exception: verify pace and artifacts against the
+checkpoint cadence before treating either state as success.
+
+## Owning a tab in a shared session
+
+Two shepherds run concurrently in one Herdr session alongside the operator's
+own work. Each creates its own tab before starting its flock:
+
+```sh
+herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" \
+  --label "shepherd:alice:coverage-fixes" --no-focus
+```
+
+```sh
+herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" \
+  --label "shepherd:bob:release-notes" --no-focus
+```
+
+Neither shepherd reads or closes the other's tab. Each renames its own tab
+to `...:done` when its flock's work is committed and its helpers are no
+longer needed, telling the operator that tab is safe to close without either
+shepherd needing to coordinate with the other directly.
+
+## Evaluate the skill
+
+Use these cases in an isolated fixture or an authorized live flock. Record
+observed decisions and artifacts, the execution environment, and any simulated
+steps. Frontmatter validation and plausible plans do not establish live behavior.
+
+| Case | Evidence to inspect |
+|---|---|
+| Two independent reviews | Both briefs submitted before waiting for a final result; reconciled findings |
+| Two edits sharing an interface | Agreed contract, isolated worktrees, explicit ownership, combined check |
+| A dependent downstream task | Dispatch occurs after the required accepted artifact is available |
+| Success reported without evidence | Artifact inspection and missing evidence obtained before acceptance |
+| One blocked helper | Independent work proceeds; the blocker is visible without blind resubmission |
+| A small indivisible task | A short serial path without unnecessary fleet creation |
+| A large task | Split into several assignments, each sized to finish inside one context, each with its own checkpoint cadence |
+| A wedged helper reporting idle | Pane read and checkpoint artifacts checked before acceptance; uncommitted work rescued and committed before any replacement is dispatched |
+| Two shepherds in one session | Each creates and owns its own tab; neither reads, splits into, or closes the other's tab or pane |
+
+The [external dispatcher](https://github.com/Gilamonster-Foundation/newt-agent/blob/main/.newt/bundled-skills/herdr-dispatcher/SKILL.md)
+provides further experience with long-running engineering efforts. Its tracker,
+publication, and cleanup conventions are not requirements of this library.
+
+Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:51 EDT | Date: 2026-09-11
+
+Model: claude-sonnet-5[1m] | Harness: Claude Code | Operator: Shawn Hartsock | Time: 10:54 EDT | Date: 2026-09-11
