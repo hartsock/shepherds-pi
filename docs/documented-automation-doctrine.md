@@ -3,8 +3,6 @@ Read the relevant section when preparing a helper brief; the skill defines
 how to supervise the work. Examples describe design choices, not permission
 to expand the assigned task.
 
-This reference is provided under Apache-2.0.
-
 # Documented automation
 
 ## The claim
