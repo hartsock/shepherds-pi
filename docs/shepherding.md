@@ -120,7 +120,7 @@ steps. Frontmatter validation and plausible plans do not establish live behavior
 | A small indivisible task | A short serial path without unnecessary fleet creation |
 | A large task | Split into several assignments, each sized to finish inside one context, each with its own checkpoint cadence |
 | A wedged helper reporting idle | Pane read and checkpoint artifacts checked before acceptance; uncommitted work rescued and committed before any replacement is dispatched |
-| A helper wedged on an oversized batched call, plenty of context left | Brief bounds tool calls to one edit each; a pane showing an announced batched edit with no result is treated as wedged regardless of remaining context |
+| A helper wedged on an oversized single edit, plenty of context left | Brief bounds each call's payload, not just call count; the oversized edit is decomposed into smaller replacements rather than retried unchanged; a pane showing an announced edit with no result is treated as wedged regardless of remaining context |
 | Two shepherds in one session | Each creates and owns its own tab; neither reads, splits into, or closes the other's tab or pane |
 
 The [external dispatcher](https://github.com/Gilamonster-Foundation/newt-agent/blob/main/.newt/bundled-skills/herdr-dispatcher/SKILL.md)
@@ -129,4 +129,4 @@ publication, and cleanup conventions are not requirements of this library.
 
 Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:51 EDT | Date: 2026-09-11
 
-Model: claude-sonnet-5[1m] | Harness: Claude Code | Operator: Shawn Hartsock | Time: 11:00 EDT | Date: 2026-09-11
+Model: claude-sonnet-5[1m] | Harness: Claude Code | Operator: Shawn Hartsock | Time: 11:02 EDT | Date: 2026-09-11

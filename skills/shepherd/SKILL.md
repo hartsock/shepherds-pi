@@ -108,11 +108,19 @@ failure: two consecutive empty or failed calls of the same tool means stop
 and report, not retry a third time.
 
 Bound the size of individual tool calls in the brief, not just the
-assignment: one edit per call, verify, commit, repeat. A batched call that
-applies several non-overlapping edit ranges at once is a single point of
-failure: when it returns empty there is no partial result and no error to
-act on, only silence. A helper with plenty of context left can still wedge
-this way; remaining headroom is not evidence the helper is healthy.
+assignment: one edit per call, verify, commit, repeat. A wedge that follows
+a batched multi-range call is easy to notice and easy to misread as caused
+by the batching; a batch is just a visible way to carry an oversized
+payload. What matters is the size of the payload a single call has to
+carry, not how many ranges it names. A single large edit, such as a full
+rewrite of one block, is as much a single point of failure as a batch, and
+wedges the same way with no batching involved. When an edit keeps failing,
+decompose the edit itself, not just the assignment; stage a large rewrite as
+several smaller replacements. The tell is the same call failing twice, not
+the assignment around it: a narrowed brief that still asks for the same
+oversized call fails the same way. A helper with plenty of context left can
+still wedge this way; remaining headroom is not evidence the helper is
+healthy.
 
 ## Dispatch and observe
 
@@ -174,4 +182,4 @@ needed. Stop when the user's acceptance criteria are met. See the
 
 Model: GPT-6 | Harness: Codex | Operator: S Hartsock | Time: 00:51 EDT | Date: 2026-09-11
 
-Model: claude-sonnet-5[1m] | Harness: Claude Code | Operator: Shawn Hartsock | Time: 11:00 EDT | Date: 2026-09-11
+Model: claude-sonnet-5[1m] | Harness: Claude Code | Operator: Shawn Hartsock | Time: 11:02 EDT | Date: 2026-09-11
