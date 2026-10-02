@@ -71,6 +71,9 @@ Deeper reference material that doesn't belong inline in a skill lives in
 
 - [`docs/shepherding.md`](docs/shepherding.md) — how the shepherd assigns,
   checks, and corrects pi work; each shepherd skill links its longer doctrine
+- [`docs/copilot-doctrine.md`](docs/copilot-doctrine.md) — the opposite
+  posture: one agent advising one human through work on a system where a
+  wrong command is expensive and attributable. The human runs everything
 - [`docs/pi-config-reference.md`](docs/pi-config-reference.md) — `pi`'s
   three config files (`models.json`, `settings.json`, `auth.json`) and how
   they interact
