@@ -39,6 +39,15 @@ do not control an unrelated focused session or silently switch transports.
 Use [Helpers setup](../herdr-helpers-tab/SKILL.md) only when capacity is needed
 and its creation is authorized. Start workers in their assigned directories.
 
+Before the first brief to a newly started agent, send the trivial request
+`reply with one word: ready` and wait for its actual reply. A successful
+dispatch proves only that text reached the pane, not that the agent's input
+loop consumed it; an immediate `idle` state or `interactive_ready: true` is
+not readiness evidence either. The handshake costs one round trip and
+prevents a silent failure: an unconsumed brief looks like a working helper
+that has not reported. Once a worker has responded this session, do not
+repeat it before every assignment.
+
 Give each helper the task, accessible sources, owned files, edit or review
 permission, constraints, and acceptance checks. Require artifact paths,
 observed evidence, and unresolved limits in its reply. Save a brief or handoff
