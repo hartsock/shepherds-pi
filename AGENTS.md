@@ -13,6 +13,8 @@ says, done.
 3. `skills/herdr` — the herdr CLI reference, if herdr is also in play.
 4. `skills/herdr-helpers-tab` — stand up a tab of idle `pi` panes for
    another agent to dispatch into.
+   Then `skills/herdr-flock` to run a project through that tab with a
+   shepherd, a reviewer and gated lanes.
 5. `skills/tmux-drive` — when a program needs a real TTY and neither `pi`
    nor herdr apply (an installer, a REPL, any TUI).
 
