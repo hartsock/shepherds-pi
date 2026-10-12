@@ -1,0 +1,51 @@
+"""Checks for tools/dupes. Run: python3 -m unittest discover skills/herdr-winnow/tools"""
+
+import contextlib
+import io
+import os
+import tempfile
+import unittest
+from importlib.machinery import SourceFileLoader
+
+dupes = SourceFileLoader(
+    "dupes", os.path.join(os.path.dirname(__file__), "dupes")
+).load_module()
+
+BLOCK = "\n".join(f"total += price[{i}] * qty[{i}]" for i in range(8))
+
+
+def run(files, *args):
+    with tempfile.TemporaryDirectory() as d:
+        for name, text in files.items():
+            with open(os.path.join(d, name), "w") as f:
+                f.write(text)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = dupes.main([*args, d])
+        return code, [line.split("\t") for line in out.getvalue().splitlines()]
+
+
+class Dupes(unittest.TestCase):
+    def test_clean_tree_exits_zero(self):
+        self.assertEqual(run({"a.py": BLOCK, "b.py": "print(1)\n"}), (0, []))
+
+    def test_overlapping_windows_merge_into_one_block(self):
+        code, rows = run({"a.py": "x = 1\n" + BLOCK, "b.py": "  " + BLOCK.replace("\n", "\n  ")})
+        self.assertEqual(code, 1)
+        self.assertEqual(len(rows), 1)
+        copies, length, saving, where = rows[0]
+        self.assertEqual((copies, length, saving), ("2", "8", "8"))
+        self.assertTrue(where.endswith("b.py:1") and "a.py:2" in where)
+
+    def test_min_count_applies_rule_of_three(self):
+        self.assertEqual(run({"a.py": BLOCK, "b.py": BLOCK}, "--min-count", "3"), (0, []))
+        code, rows = run({"a.py": BLOCK, "b.py": BLOCK, "c.py": BLOCK}, "--min-count", "3")
+        self.assertEqual((code, rows[0][:3]), (1, ["3", "8", "16"]))
+
+    def test_punctuation_and_blank_lines_are_not_duplication(self):
+        noise = "}\n\n)\n---\n" * 10
+        self.assertEqual(run({"a.js": noise, "b.js": noise}), (0, []))
+
+
+if __name__ == "__main__":
+    unittest.main()

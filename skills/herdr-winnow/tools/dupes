@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+"""dupes — report blocks of lines repeated across files.
+
+    dupes [--lines N] [--min-count K] PATH...
+
+Directories are walked (dot-directories skipped). Lines are compared with
+surrounding whitespace removed; blank lines and lines without a letter or
+digit (a lone "}", a "---" rule) are ignored. A block is at least N such
+lines appearing K or more times.
+
+stdout, one block per line, biggest saving first, tab-separated:
+
+    <copies>  <lines>  <saving>  <path:line> <path:line> ...
+
+where <saving> = (copies - 1) * lines, the lines a single copy would remove.
+Exit 0 when nothing repeats, 1 when something does, 2 on a usage error.
+
+Works on code and on hard-wrapped prose alike. It finds copies, not
+paraphrase: reflowed or reworded text needs a reader.
+"""
+
+import argparse
+import os
+import sys
+
+
+def read_lines(path):
+    """Return [(lineno, normalized)] for the lines worth comparing."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+    except (UnicodeDecodeError, OSError):
+        return []  # binary or unreadable: nothing to compare
+    stripped = (line.strip() for line in text.splitlines())
+    return [(n, s) for n, s in enumerate(stripped, 1) if any(c.isalnum() for c in s)]
+
+
+def walk(paths):
+    for p in paths:
+        if os.path.isfile(p):
+            yield p
+            continue
+        for root, dirs, files in os.walk(p):
+            dirs[:] = sorted(d for d in dirs if not d.startswith("."))
+            yield from (os.path.join(root, f) for f in sorted(files))
+
+
+def find_blocks(files, n, k):
+    """Return [(copies, length, [(path, lineno)])], longest runs merged."""
+    lines = {f: read_lines(f) for f in files}
+    seen = {}
+    for f, ls in lines.items():
+        for i in range(len(ls) - n + 1):
+            seen.setdefault(tuple(s for _, s in ls[i:i + n]), []).append((f, i))
+    at = {loc: key for key, locs in seen.items() if len(locs) >= k for loc in locs}
+
+    def same(locs, d):
+        """Do all locs, shifted by d windows, sit in one shared duplicate?"""
+        keys = {at.get((f, i + d)) for f, i in locs}
+        return len(keys) == 1 and None not in keys and len(seen[keys.pop()]) == len(locs)
+
+    blocks = []
+    for key, locs in seen.items():
+        if len(locs) < k or same(locs, -1):
+            continue  # not a duplicate, or the middle of a longer run
+        extra = 0
+        while same(locs, extra + 1):
+            extra += 1
+        # ponytail: a run repeated inside one file overlaps itself; fine for ranking
+        blocks.append((len(locs), n + extra,
+                       [(f, lines[f][i][0]) for f, i in locs]))
+    return sorted(blocks, key=lambda b: (-(b[0] - 1) * b[1], b[2]))
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("paths", nargs="+")
+    ap.add_argument("--lines", type=int, default=6, help="minimum block length (6)")
+    ap.add_argument("--min-count", type=int, default=2, help="minimum copies (2)")
+    a = ap.parse_args(argv)
+    if a.lines < 1 or a.min_count < 2:
+        ap.error("--lines must be >= 1 and --min-count >= 2")
+    blocks = find_blocks(list(walk(a.paths)), a.lines, a.min_count)
+    for copies, length, locs in blocks:
+        where = " ".join(f"{f}:{ln}" for f, ln in locs)
+        print(f"{copies}\t{length}\t{(copies - 1) * length}\t{where}")
+    return 1 if blocks else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
