@@ -50,6 +50,7 @@ get confused by.
 | [`skills/herdr`](skills/herdr/SKILL.md) | The herdr CLI itself — workspaces, tabs, panes, and agent control, straight from the tool's own authority (`herdr --help`) |
 | [`skills/herdr-helpers-tab`](skills/herdr-helpers-tab/SKILL.md) | Recreate a herdr tab with a controller pane plus N idle `pi` panes, ready for another agent to dispatch into |
 | [`skills/herdr-flock`](skills/herdr-flock/SKILL.md) | Run one project as a herdr flock: shepherd, out-group reviewer and four helpers, with on-disk lanes and a gated review-and-merge pipeline |
+| [`skills/herdr-winnow`](skills/herdr-winnow/SKILL.md) | A flock that iteratively finds duplicated code and duplicated or wordy prose, refactors it without changing behaviour, and re-scans until nothing is worth cutting |
 | [`skills/tmux-drive`](skills/tmux-drive/SKILL.md) | Drive an interactive TTY/TUI program hands-free from a non-interactive agent, on an isolated tmux server |
 
 **Shepherd guidance: brief pi helpers, inspect their work, and steer corrections.**
