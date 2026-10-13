@@ -117,6 +117,24 @@ class Dupes(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0][:3], ["2", "1200", "1200"])
 
+    def test_branching_copies_keep_the_shared_prefix_block(self):
+        # four files share a six-line prefix; a and b continue with left, c and d with right.
+        prefix = "\n".join(f"prefix_{i} = {i}" for i in range(6))
+        left = "left_a = 1\nleft_b = 2"
+        right = "right_a = 1\nright_b = 2"
+        code, rows = run({"a.py": f"{prefix}\n{left}", "b.py": f"{prefix}\n{left}",
+                          "c.py": f"{prefix}\n{right}", "d.py": f"{prefix}\n{right}"})
+        self.assertEqual(code, 1)
+        by_copies = {}
+        for r in rows:
+            by_copies.setdefault(r[0], []).append(r)
+        self.assertEqual([r[1:3] for r in by_copies["4"]], [["6", "18"]])
+        self.assertEqual(sorted(p.rsplit("/", 1)[-1] for p in by_copies["4"][0][3].split()),
+                         ["a.py:1", "b.py:1", "c.py:1", "d.py:1"])
+        pairs = sorted(sorted(p.rsplit("/", 1)[-1] for p in r[3].split()) for r in by_copies["2"])
+        self.assertEqual([r[1:3] for r in by_copies["2"]], [["8", "8"], ["8", "8"]])
+        self.assertEqual(pairs, [["a.py:1", "b.py:1"], ["c.py:1", "d.py:1"]])
+
     def test_punctuation_and_blank_lines_are_not_duplication(self):
         noise = "}\n\n)\n---\n" * 10
         self.assertEqual(run({"a.js": noise, "b.js": noise}), (0, []))
