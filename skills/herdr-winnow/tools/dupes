@@ -102,9 +102,8 @@ def find_blocks(files, n, k):
                 key = at.get((f, i + extra + 1))
                 if key is not None:
                     groups.setdefault(key, []).append((f, i))
-            going = {loc for g in groups.values() if len(g) >= k for loc in g}
-            if len(going) < len(locs):
-                runs.append((locs, extra))  # some copies end here: this length is maximal for all of them
+            if not any(len(g) == len(locs) for g in groups.values()):
+                runs.append((locs, extra))  # no one group holds every copy: this length is maximal for all of them
             todo.extend((g, extra + 1) for g in groups.values() if len(g) >= k)
         return runs
 
