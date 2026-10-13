@@ -63,6 +63,19 @@ class Dupes(unittest.TestCase):
         self.assertIn("src", where)
         self.assertNotIn("target", where)
 
+    def test_explicit_file_scan_tolerates_deleted_tracked_sibling(self):
+        with tempfile.TemporaryDirectory() as d:
+            subprocess.run(["git", "init", "-q", d], check=True)
+            for name in ("a.py", "gone.py"):
+                with open(os.path.join(d, name), "w") as f:
+                    f.write(BLOCK)
+            subprocess.run(["git", "-C", d, "add", "."], check=True)
+            os.remove(os.path.join(d, "gone.py"))  # tracked in the index, gone on disk
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                code = dupes.main([os.path.join(d, "a.py")])
+        self.assertEqual((code, out.getvalue()), (0, ""))
+
     def test_punctuation_and_blank_lines_are_not_duplication(self):
         noise = "}\n\n)\n---\n" * 10
         self.assertEqual(run({"a.js": noise, "b.js": noise}), (0, []))

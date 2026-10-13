@@ -63,8 +63,9 @@ def git_files(path):
     except (OSError, subprocess.CalledProcessError):
         return None
     files = sorted(os.path.join(d, f) for f in out.decode().split("\0") if f)
+    files = [f for f in files if os.path.isfile(f)]  # tracked but deleted: skip
     if os.path.isfile(path):
-        return [f for f in files if os.path.samefile(f, path)]
+        return [f for f in files if os.path.abspath(f) == os.path.abspath(path)]
     return files
 
 
