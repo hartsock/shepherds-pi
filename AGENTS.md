@@ -15,6 +15,7 @@ says, done.
    another agent to dispatch into.
    Then `skills/herdr-flock` to run a project through that tab with a
    shepherd, a reviewer and gated lanes.
+   `skills/herdr-winnow` runs the same flock as a refactoring loop.
 5. `skills/tmux-drive` — when a program needs a real TTY and neither `pi`
    nor herdr apply (an installer, a REPL, any TUI).
 

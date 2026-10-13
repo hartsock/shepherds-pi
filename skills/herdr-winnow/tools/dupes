@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""dupes — report blocks of lines repeated across files.
+
+    dupes [--lines N] [--min-count K] PATH...
+
+Directories are walked (dot-directories skipped). Lines are compared with
+surrounding whitespace removed; blank lines and lines without a letter or
+digit (a lone "}", a "---" rule) are ignored. A block is at least N such
+lines appearing K or more times.
+
+stdout, one block per line, biggest saving first, tab-separated:
+
+    <copies>  <lines>  <saving>  <path:line> <path:line> ...
+
+where <saving> = (copies - 1) * lines, the lines a single copy would remove.
+Exit 0 when nothing repeats, 1 when something does, 2 on a usage error.
+
+Works on code and on hard-wrapped prose alike. It finds copies, not
+paraphrase: reflowed or reworded text needs a reader.
+"""
+
+import argparse
+import os
+import subprocess
+import sys
+
+
+def read_lines(path):
+    """Return [(lineno, normalized)] for the lines worth comparing."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+    except (UnicodeDecodeError, OSError):
+        return []  # binary or unreadable: nothing to compare
+    stripped = (line.strip() for line in text.splitlines())
+    return [(n, s) for n, s in enumerate(stripped, 1) if any(c.isalnum() for c in s)]
+
+
+def walk(paths):
+    """Yield files under PATHS once each, skipping git-ignored files inside a git repo."""
+    seen = set()
+    for f in _walk(paths):
+        real = os.path.realpath(f)
+        if real not in seen:
+            seen.add(real)
+            yield f
+
+
+def _walk(paths):
+    for p in paths:
+        files = git_files(p)
+        if files is not None:
+            yield from files
+            continue
+        if os.path.isfile(p):
+            yield p
+            continue
+        for root, dirs, names in os.walk(p):
+            dirs[:] = sorted(d for d in dirs if not d.startswith("."))
+            yield from (os.path.join(root, f) for f in sorted(names))
+
+
+# Variables a git hook exports that would point git at the outer repository.
+REPO_REDIRECT = ("GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE",
+                 "GIT_OBJECT_DIRECTORY", "GIT_COMMON_DIR")
+
+
+def git_env():
+    """The environment with repository-redirecting GIT_* variables removed."""
+    return {k: v for k, v in os.environ.items() if k not in REPO_REDIRECT}
+
+
+def git_files(path):
+    """Tracked and unignored files under PATH, or None outside a git repo."""
+    d = path if os.path.isdir(path) else (os.path.dirname(path) or ".")
+    try:
+        out = subprocess.run(
+            ["git", "-C", d, "ls-files", "-z", "--cached", "--others",
+             "--exclude-standard", "--", "."],
+            capture_output=True, check=True, env=git_env(),
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    files = sorted(os.path.join(d, f) for f in out.decode().split("\0") if f)
+    files = [f for f in files if os.path.isfile(f)]  # tracked but deleted: skip
+    if os.path.isfile(path):
+        return [f for f in files if os.path.abspath(f) == os.path.abspath(path)]
+    return files
+
+
+def find_blocks(files, n, k):
+    """Return [(copies, length, [(path, lineno)])], longest runs merged."""
+    lines = {f: read_lines(f) for f in files}
+    seen = {}
+    for f, ls in lines.items():
+        for i in range(len(ls) - n + 1):
+            seen.setdefault(tuple(s for _, s in ls[i:i + n]), []).append((f, i))
+    at = {loc: key for key, locs in seen.items() if len(locs) >= k for loc in locs}
+
+    def continues(locs):
+        """Are all locs the later lines of one run, already reported from its start?"""
+        prev = {at.get((f, i - 1)) for f, i in locs}
+        return len(prev) == 1 and None not in prev
+
+    def grow(locs, extra):
+        """Return [(locs, extra)] runs: report locs at this length unless one continuing group holds all of them; continue into groups of k or more."""
+        runs, todo = [], [(locs, extra)]  # explicit stack, so block length is not limited by recursion depth
+        while todo:
+            locs, extra = todo.pop()
+            groups = {}
+            for f, i in locs:
+                key = at.get((f, i + extra + 1))
+                if key is not None:
+                    groups.setdefault(key, []).append((f, i))
+            if not any(len(g) == len(locs) for g in groups.values()):
+                runs.append((locs, extra))  # no one group holds every copy: this length is maximal for all of them
+            todo.extend((g, extra + 1) for g in groups.values() if len(g) >= k)
+        return runs
+
+    blocks = []
+    for key, locs in seen.items():
+        if len(locs) < k or continues(locs):
+            continue  # not a duplicate, or the middle of a longer run
+        for group, extra in grow(locs, 0):
+            # ponytail: a run repeated inside one file overlaps itself; fine for ranking
+            blocks.append((len(group), n + extra,
+                           [(f, lines[f][i][0]) for f, i in group]))
+    return sorted(blocks, key=lambda b: (-(b[0] - 1) * b[1], b[2]))
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("paths", nargs="+")
+    ap.add_argument("--lines", type=int, default=6, help="minimum block length (6)")
+    ap.add_argument("--min-count", type=int, default=2, help="minimum copies (2)")
+    a = ap.parse_args(argv)
+    if a.lines < 1 or a.min_count < 2:
+        ap.error("--lines must be >= 1 and --min-count >= 2")
+    for p in a.paths:
+        if not os.path.exists(p):
+            ap.error(f"no such file or directory: {p}")
+    blocks = find_blocks(list(walk(a.paths)), a.lines, a.min_count)
+    for copies, length, locs in blocks:
+        where = " ".join(f"{f}:{ln}" for f, ln in locs)
+        print(f"{copies}\t{length}\t{(copies - 1) * length}\t{where}")
+    return 1 if blocks else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
