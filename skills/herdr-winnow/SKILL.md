@@ -30,6 +30,8 @@ Each round runs from a fresh `main`:
 2. **Triage.** The shepherd applies the Rule of Three (p58). Three or more
    copies get refactored. Two copies get refactored only when they must
    change together (shotgun surgery, p80). Otherwise note them and move on.
+   Don't brief a finding in a file another open lane is moving or
+   splitting; hold it and re-scan after that lane merges.
 3. **Brief.** Give each lane one finding, or one cluster inside one unit.
    The flock's cap on active lanes applies.
 4. **Refactor, review, merge.** Use the flock pipeline, with the lane
@@ -37,7 +39,8 @@ Each round runs from a fresh `main`:
 5. **Record.** Append the round to the [ledger](#ledger).
 6. **Stop** when a scan finds nothing that passes triage, when net lines
    didn't fall this round, or when the round cap is reached. Report the
-   ledger to the operator.
+   ledger to the operator. Count "net lines didn't fall" only for rounds
+   that briefed lanes.
 
 Refactoring is "something you do all the time in little bursts" (p58).
 Keep rounds small, so each merge is easy to review and the next scan runs
@@ -46,7 +49,8 @@ against code that has already shrunk.
 ## Scan
 
 - **Duplicated code:** `tools/dupes --lines 6 <src>`.
-  See [the contract](#toolsdupes).
+  See [the contract](#toolsdupes). A hit inside an inline test module (e.g.
+  Rust `#[cfg(test)]`) is test code; check scope before briefing it.
 - **Duplicated prose:** `tools/dupes --lines 3 <docs>` finds copied
   passages. A reader finds paraphrase: the same idea explained in two
   places.
