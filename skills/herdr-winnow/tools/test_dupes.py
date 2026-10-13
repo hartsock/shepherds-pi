@@ -99,6 +99,17 @@ class Dupes(unittest.TestCase):
                 code = dupes.main([d, os.path.join(d, ".")])
         self.assertEqual((code, out.getvalue()), (0, ""))
 
+    def test_unequal_copies_keep_the_longest_continuing_block(self):
+        # a and b share eight lines; c shares only the first six.
+        six = "\n".join(BLOCK.splitlines()[:6])
+        code, rows = run({"a.py": BLOCK, "b.py": BLOCK, "c.py": six})
+        self.assertEqual(code, 1)
+        by_copies = {r[0]: r for r in rows}
+        self.assertEqual(by_copies["2"][1:3], ["8", "8"])
+        self.assertEqual(sorted(p.rsplit("/", 1)[-1] for p in by_copies["2"][3].split()), ["a.py:1", "b.py:1"])
+        self.assertEqual(by_copies["3"][1:3], ["6", "12"])
+        self.assertEqual(sorted(p.rsplit("/", 1)[-1] for p in by_copies["3"][3].split()), ["a.py:1", "b.py:1", "c.py:1"])
+
     def test_punctuation_and_blank_lines_are_not_duplication(self):
         noise = "}\n\n)\n---\n" * 10
         self.assertEqual(run({"a.js": noise, "b.js": noise}), (0, []))

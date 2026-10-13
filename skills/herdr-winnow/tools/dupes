@@ -87,21 +87,35 @@ def find_blocks(files, n, k):
             seen.setdefault(tuple(s for _, s in ls[i:i + n]), []).append((f, i))
     at = {loc: key for key, locs in seen.items() if len(locs) >= k for loc in locs}
 
-    def same(locs, d):
-        """Do all locs, shifted by d windows, sit in one shared duplicate?"""
-        keys = {at.get((f, i + d)) for f, i in locs}
-        return len(keys) == 1 and None not in keys and len(seen[keys.pop()]) == len(locs)
+    def continues(locs):
+        """Are all locs the later lines of one run, already reported from its start?"""
+        prev = {at.get((f, i - 1)) for f, i in locs}
+        return len(prev) == 1 and None not in prev
+
+    def grow(locs, extra):
+        """Return [(locs, extra)] runs: report locs at this length unless all continue, then recurse into continuing subsets."""
+        groups = {}
+        for f, i in locs:
+            key = at.get((f, i + extra + 1))
+            if key is not None:
+                groups.setdefault(key, []).append((f, i))
+        runs, going = [], set()
+        for g in groups.values():
+            if len(g) >= k:
+                going.update(g)
+                runs.extend(grow(g, extra + 1))
+        if len(going) < len(locs):
+            runs.append((locs, extra))  # some copies end here: this length is maximal for all of them
+        return runs
 
     blocks = []
     for key, locs in seen.items():
-        if len(locs) < k or same(locs, -1):
+        if len(locs) < k or continues(locs):
             continue  # not a duplicate, or the middle of a longer run
-        extra = 0
-        while same(locs, extra + 1):
-            extra += 1
-        # ponytail: a run repeated inside one file overlaps itself; fine for ranking
-        blocks.append((len(locs), n + extra,
-                       [(f, lines[f][i][0]) for f, i in locs]))
+        for group, extra in grow(locs, 0):
+            # ponytail: a run repeated inside one file overlaps itself; fine for ranking
+            blocks.append((len(group), n + extra,
+                           [(f, lines[f][i][0]) for f, i in group]))
     return sorted(blocks, key=lambda b: (-(b[0] - 1) * b[1], b[2]))
 
 
