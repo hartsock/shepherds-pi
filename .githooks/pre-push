@@ -7,7 +7,7 @@ set -eu
 
 cd "$(git rev-parse --show-toplevel)"
 
-# A tools/ directory with no test_*.py has no suite; unittest would exit 5.
+# Skip a tools/ directory with no test_*.py: it has no suite to run.
 for d in skills/*/tools; do
   [ -d "$d" ] || continue
   ls "$d"/test_*.py >/dev/null 2>&1 || continue
