@@ -90,6 +90,15 @@ class Dupes(unittest.TestCase):
         self.assertEqual((cm.exception.code, out.getvalue()), (2, ""))
         self.assertIn("typo", err.getvalue())
 
+    def test_path_aliases_do_not_manufacture_duplicates(self):
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "one.py"), "w") as f:
+                f.write(BLOCK)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                code = dupes.main([d, os.path.join(d, ".")])
+        self.assertEqual((code, out.getvalue()), (0, ""))
+
     def test_punctuation_and_blank_lines_are_not_duplication(self):
         noise = "}\n\n)\n---\n" * 10
         self.assertEqual(run({"a.js": noise, "b.js": noise}), (0, []))

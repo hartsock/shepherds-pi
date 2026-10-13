@@ -37,7 +37,16 @@ def read_lines(path):
 
 
 def walk(paths):
-    """Yield files under PATHS, skipping git-ignored files inside a git repo."""
+    """Yield files under PATHS once each, skipping git-ignored files inside a git repo."""
+    seen = set()
+    for f in _walk(paths):
+        real = os.path.realpath(f)
+        if real not in seen:
+            seen.add(real)
+            yield f
+
+
+def _walk(paths):
     for p in paths:
         files = git_files(p)
         if files is not None:
