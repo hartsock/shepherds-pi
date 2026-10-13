@@ -1,0 +1,15 @@
+#!/bin/sh
+# pre-push: run every skills/*/tools unittest suite before a push leaves.
+#
+# There is no CI pipeline yet, so this hook is the only gate. A future
+# workflow must mirror it: run the same loop over skills/*/tools.
+set -eu
+
+cd "$(git rev-parse --show-toplevel)"
+
+# A tools/ directory with no test_*.py has no suite; unittest would exit 5.
+for d in skills/*/tools; do
+  [ -d "$d" ] || continue
+  ls "$d"/test_*.py >/dev/null 2>&1 || continue
+  python3 -m unittest discover "$d"
+done
