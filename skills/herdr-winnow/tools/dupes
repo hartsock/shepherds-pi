@@ -60,6 +60,16 @@ def _walk(paths):
             yield from (os.path.join(root, f) for f in sorted(names))
 
 
+# Variables a git hook exports that would point git at the outer repository.
+REPO_REDIRECT = ("GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE",
+                 "GIT_OBJECT_DIRECTORY", "GIT_COMMON_DIR")
+
+
+def git_env():
+    """The environment with repository-redirecting GIT_* variables removed."""
+    return {k: v for k, v in os.environ.items() if k not in REPO_REDIRECT}
+
+
 def git_files(path):
     """Tracked and unignored files under PATH, or None outside a git repo."""
     d = path if os.path.isdir(path) else (os.path.dirname(path) or ".")
@@ -67,7 +77,7 @@ def git_files(path):
         out = subprocess.run(
             ["git", "-C", d, "ls-files", "-z", "--cached", "--others",
              "--exclude-standard", "--", "."],
-            capture_output=True, check=True,
+            capture_output=True, check=True, env=git_env(),
         ).stdout
     except (OSError, subprocess.CalledProcessError):
         return None
