@@ -21,6 +21,7 @@ paraphrase: reflowed or reworded text needs a reader.
 
 import argparse
 import os
+import subprocess
 import sys
 
 
@@ -36,13 +37,35 @@ def read_lines(path):
 
 
 def walk(paths):
+    """Yield files under PATHS, skipping git-ignored files inside a git repo."""
     for p in paths:
+        files = git_files(p)
+        if files is not None:
+            yield from files
+            continue
         if os.path.isfile(p):
             yield p
             continue
-        for root, dirs, files in os.walk(p):
+        for root, dirs, names in os.walk(p):
             dirs[:] = sorted(d for d in dirs if not d.startswith("."))
-            yield from (os.path.join(root, f) for f in sorted(files))
+            yield from (os.path.join(root, f) for f in sorted(names))
+
+
+def git_files(path):
+    """Tracked and unignored files under PATH, or None outside a git repo."""
+    d = path if os.path.isdir(path) else (os.path.dirname(path) or ".")
+    try:
+        out = subprocess.run(
+            ["git", "-C", d, "ls-files", "-z", "--cached", "--others",
+             "--exclude-standard", "--", "."],
+            capture_output=True, check=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    files = sorted(os.path.join(d, f) for f in out.decode().split("\0") if f)
+    if os.path.isfile(path):
+        return [f for f in files if os.path.samefile(f, path)]
+    return files
 
 
 def find_blocks(files, n, k):
