@@ -110,6 +110,13 @@ class Dupes(unittest.TestCase):
         self.assertEqual(by_copies["3"][1:3], ["6", "12"])
         self.assertEqual(sorted(p.rsplit("/", 1)[-1] for p in by_copies["3"][3].split()), ["a.py:1", "b.py:1", "c.py:1"])
 
+    def test_block_longer_than_recursion_limit_is_reported(self):
+        long = "\n".join(f"value_{i} = {i}" for i in range(1200))
+        code, rows = run({"a.py": long, "b.py": long})
+        self.assertEqual(code, 1)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][:3], ["2", "1200", "1200"])
+
     def test_punctuation_and_blank_lines_are_not_duplication(self):
         noise = "}\n\n)\n---\n" * 10
         self.assertEqual(run({"a.js": noise, "b.js": noise}), (0, []))
