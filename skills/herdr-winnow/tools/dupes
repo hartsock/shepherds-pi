@@ -93,19 +93,19 @@ def find_blocks(files, n, k):
         return len(prev) == 1 and None not in prev
 
     def grow(locs, extra):
-        """Return [(locs, extra)] runs: report locs at this length unless all continue, then recurse into continuing subsets."""
-        groups = {}
-        for f, i in locs:
-            key = at.get((f, i + extra + 1))
-            if key is not None:
-                groups.setdefault(key, []).append((f, i))
-        runs, going = [], set()
-        for g in groups.values():
-            if len(g) >= k:
-                going.update(g)
-                runs.extend(grow(g, extra + 1))
-        if len(going) < len(locs):
-            runs.append((locs, extra))  # some copies end here: this length is maximal for all of them
+        """Return [(locs, extra)] runs: report locs at this length unless one continuing group holds all of them; continue into groups of k or more."""
+        runs, todo = [], [(locs, extra)]  # explicit stack, so block length is not limited by recursion depth
+        while todo:
+            locs, extra = todo.pop()
+            groups = {}
+            for f, i in locs:
+                key = at.get((f, i + extra + 1))
+                if key is not None:
+                    groups.setdefault(key, []).append((f, i))
+            going = {loc for g in groups.values() if len(g) >= k for loc in g}
+            if len(going) < len(locs):
+                runs.append((locs, extra))  # some copies end here: this length is maximal for all of them
+            todo.extend((g, extra + 1) for g in groups.values() if len(g) >= k)
         return runs
 
     blocks = []
