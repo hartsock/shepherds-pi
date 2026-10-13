@@ -117,10 +117,10 @@ On top of the flock's verdict file:
 ## Ledger
 
 `.handoff/winnow/LEDGER.md` gets one row per round:
-`round | findings | duplicated lines | net lines | PRs`.
-"Duplicated lines" is the sum of the `saving` column from `dupes`. That
-sum may only go down. If it rises, a lane added duplication: stop the loop
-and fix that lane before starting the next round.
+`round | findings | net lines | PRs`.
+Stop the loop if a finding fixed in an earlier round reappears in a later
+scan: a lane added duplication back, so fix that lane first. `dupes`
+savings overlap ([the contract](#toolsdupes)), so never sum them.
 
 ## `tools/dupes`
 
