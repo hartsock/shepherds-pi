@@ -104,6 +104,9 @@ def main(argv=None):
     a = ap.parse_args(argv)
     if a.lines < 1 or a.min_count < 2:
         ap.error("--lines must be >= 1 and --min-count >= 2")
+    for p in a.paths:
+        if not os.path.exists(p):
+            ap.error(f"no such file or directory: {p}")
     blocks = find_blocks(list(walk(a.paths)), a.lines, a.min_count)
     for copies, length, locs in blocks:
         where = " ".join(f"{f}:{ln}" for f, ln in locs)

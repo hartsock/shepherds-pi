@@ -76,6 +76,20 @@ class Dupes(unittest.TestCase):
                 code = dupes.main([os.path.join(d, "a.py")])
         self.assertEqual((code, out.getvalue()), (0, ""))
 
+    def test_nonexistent_path_is_usage_error_not_parent_scan(self):
+        with tempfile.TemporaryDirectory() as d:
+            subprocess.run(["git", "init", "-q", d], check=True)
+            for name in ("a.py", "b.py"):
+                with open(os.path.join(d, name), "w") as f:
+                    f.write(BLOCK)
+            subprocess.run(["git", "-C", d, "add", "."], check=True)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                with self.assertRaises(SystemExit) as cm:
+                    dupes.main([os.path.join(d, "typo")])
+        self.assertEqual((cm.exception.code, out.getvalue()), (2, ""))
+        self.assertIn("typo", err.getvalue())
+
     def test_punctuation_and_blank_lines_are_not_duplication(self):
         noise = "}\n\n)\n---\n" * 10
         self.assertEqual(run({"a.js": noise, "b.js": noise}), (0, []))
