@@ -6,6 +6,7 @@ import os
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 from importlib.machinery import SourceFileLoader
 
 dupes = SourceFileLoader(
@@ -13,6 +14,14 @@ dupes = SourceFileLoader(
 ).load_module()
 
 BLOCK = "\n".join(f"total += price[{i}] * qty[{i}]" for i in range(8))
+
+
+def git(*args):
+    """Run git with the outer repo's GIT_* redirection removed, as a hook would export it."""
+    env = {k: v for k, v in os.environ.items()
+           if k not in ("GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE",
+                        "GIT_OBJECT_DIRECTORY", "GIT_COMMON_DIR")}
+    subprocess.run(["git", *args], check=True, env=env)
 
 
 def run(files, *args):
@@ -45,7 +54,7 @@ class Dupes(unittest.TestCase):
 
     def test_git_ignored_files_are_not_scanned(self):
         with tempfile.TemporaryDirectory() as d:
-            subprocess.run(["git", "init", "-q", d], check=True)
+            git("init", "-q", d)
             with open(os.path.join(d, ".gitignore"), "w") as f:
                 f.write("target/\n")
             for name in ("src/a.py", "src/b.py", "target/c.py"):
@@ -65,11 +74,11 @@ class Dupes(unittest.TestCase):
 
     def test_explicit_file_scan_tolerates_deleted_tracked_sibling(self):
         with tempfile.TemporaryDirectory() as d:
-            subprocess.run(["git", "init", "-q", d], check=True)
+            git("init", "-q", d)
             for name in ("a.py", "gone.py"):
                 with open(os.path.join(d, name), "w") as f:
                     f.write(BLOCK)
-            subprocess.run(["git", "-C", d, "add", "."], check=True)
+            git("-C", d, "add", ".")
             os.remove(os.path.join(d, "gone.py"))  # tracked in the index, gone on disk
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
@@ -78,11 +87,11 @@ class Dupes(unittest.TestCase):
 
     def test_nonexistent_path_is_usage_error_not_parent_scan(self):
         with tempfile.TemporaryDirectory() as d:
-            subprocess.run(["git", "init", "-q", d], check=True)
+            git("init", "-q", d)
             for name in ("a.py", "b.py"):
                 with open(os.path.join(d, name), "w") as f:
                     f.write(BLOCK)
-            subprocess.run(["git", "-C", d, "add", "."], check=True)
+            git("-C", d, "add", ".")
             out, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
                 with self.assertRaises(SystemExit) as cm:
@@ -98,6 +107,33 @@ class Dupes(unittest.TestCase):
             with contextlib.redirect_stdout(out):
                 code = dupes.main([d, os.path.join(d, ".")])
         self.assertEqual((code, out.getvalue()), (0, ""))
+
+    def test_inherited_git_repo_env_does_not_redirect_scan(self):
+        # A git hook exports GIT_DIR/GIT_INDEX_FILE for the outer repo. The scan
+        # must ignore them: the decoy's info/exclude hides *.py, so a redirected
+        # scan finds nothing, and the decoy's index must stay byte-identical.
+        with tempfile.TemporaryDirectory() as decoy, tempfile.TemporaryDirectory() as fixture:
+            git("init", "-q", decoy)
+            with open(os.path.join(decoy, "keep.txt"), "w") as f:
+                f.write("keep\n")
+            with open(os.path.join(decoy, ".git", "info", "exclude"), "w") as f:
+                f.write("*.py\n")
+            git("-C", decoy, "add", ".")
+            index = os.path.join(decoy, ".git", "index")
+            with open(index, "rb") as f:
+                before = f.read()
+            for name in ("a.py", "b.py"):
+                with open(os.path.join(fixture, name), "w") as f:
+                    f.write(BLOCK)
+            env = {"GIT_DIR": os.path.join(decoy, ".git"), "GIT_INDEX_FILE": index}
+            out = io.StringIO()
+            with mock.patch.dict(os.environ, env), contextlib.redirect_stdout(out):
+                code = dupes.main([fixture])
+            with open(index, "rb") as f:
+                after = f.read()
+        self.assertEqual(after, before)
+        self.assertEqual(code, 1)
+        self.assertEqual(len(out.getvalue().splitlines()), 1)
 
     def test_unequal_copies_keep_the_longest_continuing_block(self):
         # a and b share eight lines; c shares only the first six.
