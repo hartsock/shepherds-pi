@@ -129,7 +129,13 @@ dupes [--lines N] [--min-count K] PATH...
 
 - **What it finds:** blocks of N or more lines that appear K or more times
   (defaults 6 and 2). Leading and trailing whitespace is ignored. Blank
-  lines and punctuation-only lines are skipped.
+  lines and punctuation-only lines are skipped. Files inside a git repo are
+  listed with `git ls-files --exclude-standard`, so git-ignored output such
+  as `target/` and `node_modules/` is never scanned.
+- **Known overlap:** a run nested in a longer block is reported on its own
+  only when it has more copies than the enclosing block. Its `saving`
+  then overlaps the enclosing block's `saving`, so do not add the two.
+  Read the rows as candidates, not as a total.
 - **Output:** one block per line on stdout, tab-separated:
   `copies lines saving path:line…`, biggest saving first.
 - **Exit status:** 0 if nothing repeats, 1 if something does, 2 on a usage
