@@ -113,8 +113,8 @@ Today the lanes are files on disk. agent-mesh's flock turns the same pipeline
 into signed events in one log: briefs, acks, results, reviews and verdicts are
 named by content ID, so the board is verifiable and an `amesh-tui` can watch
 it. The lane files stay plain text and cited by ID, and dispatch, review and
-merge policy stay in this skill. The `amesh flock` CLI is not built yet, so
-keep using files. See the
+merge policy stay in this skill. Only `amesh flock init` exists so far, so
+keep using files until the workflow CLI lands. See the
 [flock skill](https://github.com/Gilamonster-Foundation/agent-mesh/blob/main/skills/flock/SKILL.md)
 for what exists, and the
 [decision doc](https://github.com/Gilamonster-Foundation/agent-mesh/blob/main/docs/decisions/flock.md).
