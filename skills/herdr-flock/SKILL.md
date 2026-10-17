@@ -107,8 +107,21 @@ Set the CLI's context window to what the server actually gives each session.
 A server that splits its window across parallel slots gives each session
 less than the model's nominal window.
 
+## A signed channel
+
+Today the lanes are files on disk. agent-mesh's flock turns the same pipeline
+into signed events in one log: briefs, acks, results, reviews and verdicts are
+named by content ID, so the board is verifiable and an `amesh-tui` can watch
+it. The lane files stay plain text and cited by ID, and dispatch, review and
+merge policy stay in this skill. Only `amesh flock init` exists so far, so
+keep using files until the workflow CLI lands. See the
+[flock skill](https://github.com/Gilamonster-Foundation/agent-mesh/blob/main/skills/flock/SKILL.md)
+for what exists, and the
+[decision doc](https://github.com/Gilamonster-Foundation/agent-mesh/blob/main/docs/decisions/flock.md).
+
 ## Related
 
 - [herdr-helpers-tab](../herdr-helpers-tab/SKILL.md): building the pane row
 - [docs/shepherding.md](../../docs/shepherding.md): brief, inspect, steer
 - [`herdr-dispatcher`](https://github.com/Gilamonster-Foundation/newt-agent/blob/main/.newt/bundled-skills/herdr-dispatcher/SKILL.md): dispatch mechanics from many real multi-lane merges
+- [`flock`](https://github.com/Gilamonster-Foundation/agent-mesh/blob/main/skills/flock/SKILL.md): agent-mesh's signed channel for this pipeline
