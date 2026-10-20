@@ -115,10 +115,10 @@ pane, and `amesh flock session` in each pane, which holds that pane's key):
 
 | Step | Command | Signed by |
 |---|---|---|
-| Brief | `amesh flock brief --to helper1 --lane L` (BRIEF.md stays the text, cited by id) | shepherd |
+| Brief | `amesh flock brief --to helper1 --lane L --cite root:BRIEF-L.md` (the lane file stays the text; the log carries its id) | shepherd |
 | Pickup | `amesh flock take <brief>` | helper |
-| Dispatch | `amesh flock nudge` prompts the addressee's pane with `amesh flock take <id>` | herdr adapter |
-| Result | `amesh flock result <brief> --outcome completed`, only after `git ls-remote` shows the pushed head | helper |
+| Dispatch | `amesh flock nudge` prompts the addressee's pane with `amesh flock take <id>`; it only prompts panes herdr tracks as agents (`herdr agent list`), so relay to the rest by hand | herdr adapter |
+| Result | `amesh flock result --lane L --outcome completed`, only after `git ls-remote` shows the pushed head | helper |
 | Review | `amesh flock review --to reviewer --lane L --head <sha>` | shepherd |
 | Verdict | `amesh flock verdict <review> --head <sha> --approve\|--reject` | reviewer |
 
@@ -126,7 +126,8 @@ The gates check their own preconditions instead of trusting a file: merge only
 when the log holds an approving verdict for exactly the PR's head and
 `git ls-remote` shows that head. `amesh flock status` and `amesh-tui` replace
 reading pane titles; every ack and result is at the `self` tier, signed by the
-member's own session. Never sign for another member, and the nudge adapter
+member's own session, and the Lane view marks a cited lane file that changed
+after it was cited. Never sign for another member, and the nudge adapter
 never prompts the operator's pane. Without a flock, keep the lane files above.
 See the
 [flock skill](https://github.com/Gilamonster-Foundation/agent-mesh/blob/main/skills/flock/SKILL.md).
